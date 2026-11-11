@@ -2,11 +2,11 @@ import React, { useEffect, useRef } from 'react';
 import { Avatar } from '@originkit/avatars/react';
 
 /**
- * Floating bottom-right interactive doodle avatar powered by @originkit/avatars.
+ * Interactive topbar doodle avatar powered by @originkit/avatars.
  * Uses @originkit/avatars' built-in pointer gaze tracking alongside a gentle
  * compositor-only magnetic lean toward the cursor while respecting reduced motion.
  */
-export function UserAvatar({ name = 'Kiko', size = 56 }) {
+export function UserAvatar({ name = 'Kiko', size = 36 }) {
   const badgeRef = useRef(null);
 
   useEffect(() => {
@@ -43,9 +43,9 @@ export function UserAvatar({ name = 'Kiko', size = 56 }) {
         const dist = Math.hypot(dx, dy) || 1;
         const reach = Math.min(1, dist / 280);
 
-        const shiftX = (dx / dist) * 6 * reach;
-        const shiftY = (dy / dist) * 6 * reach;
-        const tiltDeg = (dx / dist) * 5 * reach;
+        const shiftX = (dx / dist) * 3.5 * reach;
+        const shiftY = (dy / dist) * 3.5 * reach;
+        const tiltDeg = (dx / dist) * 4 * reach;
 
         el.style.transform = `translate3d(${shiftX.toFixed(2)}px, ${shiftY.toFixed(2)}px, 0px) rotate(${tiltDeg.toFixed(2)}deg)`;
       });
@@ -73,10 +73,10 @@ export function UserAvatar({ name = 'Kiko', size = 56 }) {
   }, []);
 
   return (
-    <div className="no-print fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-40 pointer-events-none">
+    <div className="no-print shrink-0 flex items-center">
       <div
         ref={badgeRef}
-        className="examia-corner-avatar pointer-events-auto p-1.5 rounded-[22px] bg-[#642F43] border border-[#C58E9B]/65 shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_14px_28px_-6px_rgba(74,31,48,0.34),0_4px_10px_-2px_rgba(74,31,48,0.18)] flex items-center justify-center"
+        className="examia-corner-avatar p-1 rounded-[14px] bg-[#642F43] border border-[#C58E9B]/65 shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_6px_14px_-4px_rgba(74,31,48,0.28)] flex items-center justify-center"
       >
         <Avatar
           style="doodles"

@@ -4,7 +4,6 @@ import Topbar from './components/Topbar';
 import Toast from './components/Toast';
 import Modal from './components/Modal';
 import LoadingScreen from './components/LoadingScreen';
-import { UserAvatar } from './components/UserAvatar';
 
 import OverviewView from './views/OverviewView';
 import SubjectsView from './views/SubjectsView';
@@ -521,7 +520,6 @@ export default function App() {
           onClose={() => setToast(null)}
         />
       )}
-      <UserAvatar name="Kiko" size={56} />
       </div>
       {showLoader && (
         <LoadingScreen

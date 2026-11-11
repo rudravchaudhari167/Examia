@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Bell, Calendar, Clock } from 'lucide-react';
+import { UserAvatar } from './UserAvatar';
 
 const DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
   weekday: 'short',
@@ -63,13 +64,13 @@ export default function Topbar({
   const isoTimestamp = now.toISOString();
 
   return (
-    <header className="h-20 bg-[#FDF9FA] border-b border-[#C58E9B]/40 shadow-[0_4px_18px_-4px_rgba(100,47,67,0.08)] px-8 flex items-center justify-between sticky top-0 z-10 select-none">
+    <header className="h-20 bg-[#FDF9FA] border-b border-[#C58E9B]/40 shadow-[0_4px_18px_-4px_rgba(100,47,67,0.08)] px-4 sm:px-8 flex items-center justify-between gap-3 sticky top-0 z-10 select-none">
       {/* Left: Title & Breadcrumb */}
-      <div>
-        <p className="text-[11px] font-semibold text-[#6F4253] tracking-wide uppercase">
+      <div className="min-w-0">
+        <p className="text-[11px] font-semibold text-[#6F4253] tracking-wide uppercase truncate">
           {meta.breadcrumb}
         </p>
-        <h2 className="text-xl font-serif font-bold text-[#642F43] tracking-tight">
+        <h2 className="text-xl font-serif font-bold text-[#642F43] tracking-tight truncate">
           {meta.title}
         </h2>
       </div>
@@ -102,8 +103,10 @@ export default function Topbar({
         </div>
       </div>
 
-      {/* Right: Notification, Profile */}
-      <div className="flex items-center gap-3.5">
+      {/* Right: Avatar, Notification, Profile */}
+      <div className="flex items-center gap-3 sm:gap-3.5 shrink-0">
+        <UserAvatar name="Kiko" size={36} />
+
         {/* Notifications */}
         <div className="relative">
           <button 
