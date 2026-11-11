@@ -11,8 +11,7 @@ import { executeAlgorithmComparison } from '../api/apiService';
 
 export default function ComparisonView({ 
   subjects, 
-  graph, 
-  backendStatus 
+  graph
 }) {
   const [benchmarkResult, setBenchmarkResult] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
@@ -33,7 +32,7 @@ export default function ComparisonView({
       const result = await executeAlgorithmComparison(
         subjects, 
         0, // auto chromatic search for backtracking
-        backendStatus.isConnected ? "auto" : "js"
+        "js"
       );
       setBenchmarkResult(result);
     } catch (err) {

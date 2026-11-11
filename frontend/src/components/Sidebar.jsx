@@ -18,7 +18,6 @@ const NAV_ITEMS = [
 export default function Sidebar({ 
   activeTab, 
   setActiveTab, 
-  backendStatus,
   onOpenSettings,
   onOpenAbout
 }) {
@@ -107,9 +106,9 @@ export default function Sidebar({
           
           <div className="mt-3.5 px-3 py-1.5 rounded-xl bg-[#F4E4E9] border border-[#C58E9B]/45 flex items-center justify-between text-xs">
             <span className="text-[#4A1F30] font-medium text-[11px] truncate">
-              {backendStatus.isConnected ? "Java 21 Kernel Connected" : "Browser DAA Engine Active"}
+              Browser DAA Engine Active
             </span>
-            <span className={`w-2 h-2 rounded-full ${backendStatus.isConnected ? "bg-[#642F43] shadow-[0_0_8px_rgba(100,47,67,0.55)] animate-pulse" : "bg-[#C58E9B]"}`} />
+            <span className="w-2 h-2 rounded-full bg-[#642F43] shadow-[0_0_8px_rgba(100,47,67,0.4)]" aria-hidden="true" />
           </div>
         </div>
 

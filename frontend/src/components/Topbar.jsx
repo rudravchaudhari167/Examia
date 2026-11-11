@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Bell, Calendar, Clock, Server } from 'lucide-react';
+import { Bell, Calendar, Clock } from 'lucide-react';
 
 const DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
   weekday: 'short',
@@ -16,9 +16,7 @@ const TIME_FORMATTER = new Intl.DateTimeFormat('en-US', {
 });
 
 export default function Topbar({ 
-  activeTab, 
-  backendStatus, 
-  onRefreshBackend
+  activeTab
 }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [now, setNow] = useState(() => new Date());
@@ -104,21 +102,8 @@ export default function Topbar({
         </div>
       </div>
 
-      {/* Right: Engine Status, Notification, Profile */}
+      {/* Right: Notification, Profile */}
       <div className="flex items-center gap-3.5">
-        {/* Engine status indicator */}
-        <div 
-          onClick={onRefreshBackend}
-          className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#C58E9B]/55 bg-[#FAF0F3] hover:bg-[#F3E2E7] shadow-[0_2px_8px_-2px_rgba(100,47,67,0.10)] cursor-pointer transition-[background-color,border-color,box-shadow] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] text-xs"
-          title="Click to re-check Java Backend status"
-        >
-          <Server className={`w-3.5 h-3.5 ${backendStatus.isConnected ? 'text-[#642F43]' : 'text-[#6F4253]'}`} aria-hidden="true" />
-          <span className="text-[11px] font-semibold text-[#361522]">
-            {backendStatus.isConnected ? "Java 26 Kernel" : "Browser DAA Engine"}
-          </span>
-          <span className={`w-2 h-2 rounded-full ${backendStatus.isConnected ? 'bg-[#642F43]' : 'bg-[#C58E9B]'}`} aria-hidden="true" />
-        </div>
-
         {/* Notifications */}
         <div className="relative">
           <button 
@@ -146,12 +131,10 @@ export default function Topbar({
                 </div>
                 <div className="p-2.5 rounded-xl clay-inset">
                   <p className="font-semibold text-[#361522]">
-                    {backendStatus.isConnected ? "Java VM Running" : "Browser In-Memory Engine"}
+                    Browser In-Memory Engine
                   </p>
                   <p className="text-[11px] text-[#6F4253] mt-0.5">
-                    {backendStatus.isConnected 
-                      ? "High-performance Java DAA socket connected on Port 8080." 
-                      : "Operating in client-side standalone execution mode."}
+                    Operating in client-side standalone execution mode.
                   </p>
                 </div>
               </div>

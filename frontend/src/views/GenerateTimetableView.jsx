@@ -14,8 +14,7 @@ export default function GenerateTimetableView({
   config,
   setConfig,
   onTimetableGenerated,
-  setActiveTab,
-  backendStatus
+  setActiveTab
 }) {
   const [selectedAlgo, setSelectedAlgo] = useState(config.algorithm || 'greedy');
   const [maxSlotsLimit, setMaxSlotsLimit] = useState(config.maxSlots || 0); // 0 = auto
@@ -49,9 +48,9 @@ export default function GenerateTimetableView({
       // Step 2: Running algorithm
       let result;
       if (selectedAlgo === 'greedy') {
-        result = await executeGreedyColoring(subjects, backendStatus.isConnected ? "auto" : "js");
+        result = await executeGreedyColoring(subjects, "js");
       } else {
-        result = await executeBacktrackingColoring(subjects, maxSlotsLimit, backendStatus.isConnected ? "auto" : "js");
+        result = await executeBacktrackingColoring(subjects, maxSlotsLimit, "js");
       }
 
       if (!result.isValid && selectedAlgo === 'backtracking' && maxSlotsLimit > 0) {
@@ -234,8 +233,8 @@ export default function GenerateTimetableView({
             <div className="p-3 rounded-xl clay-inset text-xs text-[#361522] flex items-center justify-between">
               <span className="text-[#6F4253] font-medium">Engine Execution Host:</span>
               <span className="font-bold text-[#642F43] flex items-center gap-1.5">
-                <span className={`w-2 h-2 rounded-full ${backendStatus.isConnected ? 'bg-[#642F43]' : 'bg-[#C58E9B]'}`} />
-                {backendStatus.isConnected ? "Java 21 Kernel (Port 8080)" : "Browser DAA Engine (Local JS)"}
+                <span className="w-2 h-2 rounded-full bg-[#642F43]" />
+                Browser DAA Engine (Local JS)
               </span>
             </div>
           </div>

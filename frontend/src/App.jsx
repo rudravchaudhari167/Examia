@@ -21,9 +21,8 @@ import {
   DEFAULT_TIMETABLE_CONFIG 
 } from './data/defaultData';
 import { buildConflictGraph } from './algorithms/graph';
-import { checkJavaBackendHealth } from './api/apiService';
 import { 
-  Building, Server, RotateCcw, Plus, Trash2, Cpu, 
+  Building, Plus, Trash2, Cpu, 
   BookOpen, CheckCircle2, ShieldCheck, Code2 
 } from 'lucide-react';
 
@@ -122,20 +121,7 @@ export default function App() {
   const [isAppReady, setIsAppReady] = useState(false);
   const [showLoader, setShowLoader] = useState(true);
 
-  // Backend Health State
-  const [backendStatus, setBackendStatus] = useState({ isConnected: false, data: null });
-
-  const refreshBackendHealth = async () => {
-    const status = await checkJavaBackendHealth();
-    setBackendStatus(status);
-    if (status.isConnected) {
-      showToast(`Java 21 DAA Native Engine Connected (Port 8080)`, "success");
-    } else {
-      showToast("Java backend offline. Browser DAA Engine active.", "info");
-    }
-  };
-
-  // Initialize resources & backend status on mount, then dismiss loader
+  // Initialize resources on mount, then dismiss loader
   useEffect(() => {
     let cancelled = false;
     const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -145,14 +131,6 @@ export default function App() {
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const initializeApp = async () => {
-      let initialHealth = { isConnected: false, data: null };
-      const healthTask = checkJavaBackendHealth()
-        .then((res) => {
-          initialHealth = res;
-          return res;
-        })
-        .catch(() => initialHealth);
-
       const fontsReady =
         typeof document !== 'undefined' && document.fonts?.ready
           ? Promise.race([document.fonts.ready, delay(900)])
@@ -161,33 +139,18 @@ export default function App() {
       const minShowcaseMs = reducedMotion ? 220 : 1380;
 
       await Promise.race([
-        Promise.all([healthTask, fontsReady, delay(minShowcaseMs)]),
+        Promise.all([fontsReady, delay(minShowcaseMs)]),
         delay(2400),
       ]);
 
       if (cancelled) return;
-      setBackendStatus(initialHealth);
       setIsAppReady(true);
-
-      if (initialHealth.isConnected) {
-        showToast(`Java 21 DAA Native Engine Connected (Port 8080)`, "success");
-      } else {
-        showToast("Java backend offline. Browser DAA Engine active.", "info");
-      }
     };
 
     initializeApp();
 
-    const interval = setInterval(async () => {
-      const status = await checkJavaBackendHealth();
-      if (!cancelled) {
-        setBackendStatus(status);
-      }
-    }, 10000);
-
     return () => {
       cancelled = true;
-      clearInterval(interval);
     };
   }, []);
 
@@ -317,7 +280,6 @@ export default function App() {
       <Sidebar
         activeTab={activeTab}
         setActiveTab={handleTabChange}
-        backendStatus={backendStatus}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenAbout={() => setIsAboutOpen(true)}
       />
@@ -325,11 +287,7 @@ export default function App() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Topbar */}
-        <Topbar
-          activeTab={activeTab}
-          backendStatus={backendStatus}
-          onRefreshBackend={refreshBackendHealth}
-        />
+        <Topbar activeTab={activeTab} />
 
         {/* Scrollable View Area */}
         <main ref={mainScrollRef} className="examia-main-scroll flex-1 overflow-y-auto px-6 sm:px-10 py-6">
@@ -386,7 +344,6 @@ export default function App() {
                 setConfig={setConfig}
                 onTimetableGenerated={handleTimetableGenerated}
                 setActiveTab={handleTabChange}
-                backendStatus={backendStatus}
               />
             )}
 
@@ -394,7 +351,6 @@ export default function App() {
               <ComparisonView
                 subjects={subjects}
                 graph={graph}
-                backendStatus={backendStatus}
               />
             )}
 
@@ -416,40 +372,10 @@ export default function App() {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         title="Settings & Facility Configuration"
-        subtitle="Manage execution engine connection, rooms, and default data."
+        subtitle="Manage examination halls, seating capacities, and default dataset."
         maxWidth="max-w-2xl"
       >
         <div className="space-y-6">
-          {/* Backend Connection Panel */}
-          <div className="p-4 rounded-2xl clay-inset">
-            <div className="flex items-center justify-between pb-2 border-b border-[#C58E9B]/35">
-              <div className="flex items-center gap-2">
-                <Server className="w-4 h-4 text-[#642F43]" />
-                <h4 className="font-serif font-bold text-sm text-[#642F43]">DAA Algorithm Engine Status</h4>
-              </div>
-              <span className={`badge ${backendStatus.isConnected ? 'badge-sage' : 'badge-lavender'}`}>
-                {backendStatus.isConnected ? "Java 21 Kernel Online" : "Browser Engine Active"}
-              </span>
-            </div>
-            <p className="text-xs text-[#6F4253] mt-2">
-              {backendStatus.isConnected 
-                ? "The high-performance lightweight Java REST API is connected on port 8080."
-                : "Examia is running in standalone client-side mode with an exact JavaScript mirror of the DAA algorithms. Run './run-backend.sh' in the terminal to launch the Java backend."}
-            </p>
-            <div className="mt-3 flex items-center justify-between">
-              <span className="font-mono text-[11px] text-[#4A1F30] font-medium">
-                {backendStatus.isConnected ? `JVM: ${backendStatus.data?.jvm || 'Java 21 LTS'}` : "Local JavaScript Mirror active"}
-              </span>
-              <button
-                onClick={refreshBackendHealth}
-                className="btn-secondary text-xs py-1.5 px-3.5 flex items-center gap-1.5"
-              >
-                <RotateCcw className="w-3 h-3" />
-                <span>Test Connection</span>
-              </button>
-            </div>
-          </div>
-
           {/* Room Allocation Management */}
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -579,7 +505,7 @@ export default function App() {
               <span>Technology &amp; Implementation Integrity</span>
             </h5>
             <p className="text-[11px] text-[#6F4253]">
-              Backend: Pure standard library Java 21 LTS (<code>com.sun.net.httpserver</code>) with zero external frameworks. Runs on port 8080.
+              Engine: High-precision Graph Coloring (Welsh-Powell) and Recursive Backtracking DFS executing directly in-browser.
               <br />
               Frontend: React 18, Vite 6, Tailwind/CSS3 typography with editorial aesthetic and high-precision SVG canvas visualization.
             </p>
