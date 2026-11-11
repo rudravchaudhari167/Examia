@@ -47,29 +47,31 @@ export default function OverviewView({
   const slotsRequired = timetableResult ? timetableResult.numSlots : (graph.subjects.length > 0 ? "Pending" : 0);
 
   return (
-    <div className="space-y-8 animate-fade-in pb-10">
+    <div className="space-y-6 sm:space-y-8 animate-fade-in pb-8 sm:pb-10">
       {/* Welcome Banner */}
-      <div className="clay-dark-hero p-8 relative overflow-hidden">
+      <div className="clay-dark-hero p-5 sm:p-8 relative overflow-hidden">
         <div className="relative z-10 max-w-2xl">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/12 border border-[#E8CBD3]/35 text-[#F6E6EB] mb-3">Academic Excellence &middot; DAA Engine</span>
-          <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#FDF8FA] tracking-tight leading-tight">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] sm:text-xs font-semibold bg-white/12 border border-[#E8CBD3]/35 text-[#F6E6EB] mb-3">Academic Excellence &middot; DAA Engine</span>
+          <h1 className="font-serif text-2xl sm:text-4xl font-bold text-[#FDF8FA] tracking-tight leading-tight">
             {greeting}, Administrator
           </h1>
-          <p className="text-sm text-[#F0D9E0] mt-2 font-sans leading-relaxed">
+          <p className="text-xs sm:text-sm text-[#F0D9E0] mt-2 font-sans leading-relaxed">
             Here's an overview of your examination scheduling workspace. Graph coloring heuristics and recursive backtracking are active to guarantee 100% conflict-free sessions.
           </p>
 
-          <div className="flex items-center gap-4 mt-6 flex-wrap">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-4 mt-5 sm:mt-6">
             <button 
+              type="button"
               onClick={() => setActiveTab('generate')}
-              className="bg-[#FDF8FA] text-[#642F43] hover:bg-[#F5E4EA] border border-[#E8CBD3] rounded-full font-semibold text-xs py-2.5 px-5 inline-flex items-center gap-2 shadow-[0_6px_16px_-4px_rgba(38,13,23,0.35)] hover:-translate-y-0.5 transition-all cursor-pointer"
+              className="bg-[#FDF8FA] text-[#642F43] hover:bg-[#F5E4EA] border border-[#E8CBD3] rounded-full font-semibold text-xs min-h-[44px] py-2.5 px-5 inline-flex items-center justify-center gap-2 shadow-[0_6px_16px_-4px_rgba(38,13,23,0.35)] hover:-translate-y-0.5 transition-all cursor-pointer"
             >
               <Sparkles className="w-4 h-4 text-[#642F43]" />
               <span>Generate Timetable</span>
             </button>
             <button 
+              type="button"
               onClick={() => setActiveTab('graph')}
-              className="bg-[#C58E9B]/22 text-[#FDF8FA] hover:bg-[#C58E9B]/34 border border-[#E8CBD3]/45 rounded-full font-semibold text-xs py-2.5 px-5 inline-flex items-center gap-2 hover:-translate-y-0.5 transition-all cursor-pointer"
+              className="bg-[#C58E9B]/22 text-[#FDF8FA] hover:bg-[#C58E9B]/34 border border-[#E8CBD3]/45 rounded-full font-semibold text-xs min-h-[44px] py-2.5 px-5 inline-flex items-center justify-center gap-2 hover:-translate-y-0.5 transition-all cursor-pointer"
             >
               <Share2 className="w-4 h-4 text-[#EED7DF]" />
               <span>Explore Conflict Graph</span>
@@ -128,10 +130,10 @@ export default function OverviewView({
       </div>
 
       {/* Quick Workspace Actions & Core DAA Mission */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
         {/* Left Column: Quick Workspace Actions */}
-        <div className="lg:col-span-7">
-          <div className="card-premium p-6 h-full flex flex-col justify-between">
+        <div className="lg:col-span-7 min-w-0">
+          <div className="card-premium p-4 sm:p-6 h-full flex flex-col justify-between">
             <div>
               <h3 className="font-serif font-bold text-lg text-[#642F43] mb-1">
                 Quick Workspace Actions
@@ -179,20 +181,20 @@ export default function OverviewView({
         </div>
 
         {/* Right Column: Core DAA Mission */}
-        <div className="lg:col-span-5">
-          <div className="clay-dark-hero p-6 text-[#FDF8FA] h-full flex flex-col justify-between">
+        <div className="lg:col-span-5 min-w-0">
+          <div className="clay-dark-hero p-5 sm:p-6 text-[#FDF8FA] h-full flex flex-col justify-between">
             <div>
               <span className="text-[10px] uppercase font-bold tracking-widest text-[#E8CBD3]">
                 Core DAA Mission
               </span>
-              <h3 className="font-serif text-2xl font-bold mt-2 leading-tight text-[#FDF8FA]">
+              <h3 className="font-serif text-xl sm:text-2xl font-bold mt-2 leading-tight text-[#FDF8FA]">
                 "Every examination. Perfectly placed."
               </h3>
               <p className="text-xs text-[#F0D9E0] mt-2.5 leading-relaxed">
                 Transforming complex graph chromatic constraints into smooth, human-friendly academic calendars. Zero simultaneous exams for any student.
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-[#C58E9B]/30 flex items-center justify-between text-[11px] text-[#E8CBD3]">
+            <div className="mt-4 pt-3 border-t border-[#C58E9B]/30 flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#E8CBD3]">
               <span>NP-Hard Problem</span>
               <span className="font-mono">Welsh-Powell &amp; DFS</span>
             </div>

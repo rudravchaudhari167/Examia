@@ -86,16 +86,17 @@ export default function ComparisonView({
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
         <div>
-          <h2 className="text-2xl font-serif font-bold text-[#642F43]">Algorithm Comparison Dashboard</h2>
+          <h2 className="text-xl sm:text-2xl font-serif font-bold text-[#642F43]">Algorithm Comparison Dashboard</h2>
           <p className="text-xs text-[#6F4253] mt-0.5">
             Empirical runtime performance and chromatic optimality comparison on the exact same conflict graph.
           </p>
         </div>
 
         <button
+          type="button"
           onClick={runBenchmark}
           disabled={isRunning}
-          className="btn-primary text-xs py-2.5 px-5 flex items-center gap-2 self-start sm:self-auto"
+          className="btn-primary text-xs min-h-[44px] py-2.5 px-5 flex items-center justify-center gap-2 w-full sm:w-auto shrink-0"
         >
           <Play className={`w-3.5 h-3.5 ${isRunning ? 'animate-spin' : ''}`} />
           <span>{isRunning ? 'Measuring Live Execution...' : 'Re-Run Live Benchmark'}</span>
@@ -111,19 +112,133 @@ export default function ComparisonView({
 
       {/* Side-by-Side Comparison Metric Table (Requirement 12) */}
       <div className="card-premium overflow-hidden">
-        <div className="p-5 border-b border-[#C58E9B]/35 flex items-center justify-between bg-[#FAF0F3]">
+        <div className="p-4 sm:p-5 border-b border-[#C58E9B]/35 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-[#FAF0F3]">
           <div>
-            <h3 className="font-serif font-bold text-base text-[#642F43]">
+            <h3 id="comparison-matrix-heading" className="font-serif font-bold text-base text-[#642F43]">
               Empirical Performance Matrix
             </h3>
             <p className="text-xs text-[#6F4253]">
               Direct comparison on |V| = {graph.vertexCount} subjects, |E| = {graph.edgeCount} conflict edges.
             </p>
           </div>
-          <span className="badge badge-lavender">Direct Comparison</span>
+          <span className="badge badge-lavender self-start sm:self-auto shrink-0">Direct Comparison</span>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Mobile Stacked Metric Cards (< 768px) */}
+        <div className="md:hidden divide-y divide-[#C58E9B]/25 bg-[#FDF9FA]">
+          <div className="p-4 space-y-2.5">
+            <p className="font-bold text-xs text-[#361522]">Number of Slots Used</p>
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="p-2.5 rounded-xl clay-inset min-w-0">
+                <p className="text-[10px] font-bold uppercase text-[#8F4B63]">Greedy</p>
+                <p className="font-mono font-bold text-sm text-[#8F4B63] mt-0.5">
+                  {greedy ? `${greedy.numSlots} Slots` : "..."}
+                </p>
+              </div>
+              <div className="p-2.5 rounded-xl clay-inset min-w-0">
+                <p className="text-[10px] font-bold uppercase text-[#642F43]">Backtracking</p>
+                <p className="font-mono font-bold text-sm text-[#642F43] mt-0.5">
+                  {backtracking ? `${backtracking.numSlots} Slots (Opt \u03C7)` : "..."}
+                </p>
+              </div>
+            </div>
+            <p className="text-[11px] text-[#6F4253]">
+              Backtracking guarantees the exact minimum &chi;(G); Greedy provides an upper bound &le; &Delta;(G) + 1.
+            </p>
+          </div>
+
+          <div className="p-4 space-y-2.5">
+            <p className="font-bold text-xs text-[#361522]">Execution Time</p>
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="p-2.5 rounded-xl clay-inset min-w-0">
+                <p className="text-[10px] font-bold uppercase text-[#8F4B63]">Greedy</p>
+                <p className="font-mono font-bold text-xs text-[#8F4B63] mt-0.5">
+                  {greedy ? `${greedy.executionTimeMs.toFixed(4)} ms` : "..."}
+                </p>
+              </div>
+              <div className="p-2.5 rounded-xl clay-inset min-w-0">
+                <p className="text-[10px] font-bold uppercase text-[#642F43]">Backtracking</p>
+                <p className="font-mono font-bold text-xs text-[#642F43] mt-0.5">
+                  {backtracking ? `${backtracking.executionTimeMs.toFixed(4)} ms` : "..."}
+                </p>
+              </div>
+            </div>
+            <p className="text-[11px] text-[#6F4253]">
+              Greedy completes almost instantaneously; Backtracking explores the state-space tree.
+            </p>
+          </div>
+
+          <div className="p-4 space-y-2.5">
+            <p className="font-bold text-xs text-[#361522]">Valid Schedule (Conflict-Free)</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="p-2.5 rounded-xl clay-inset min-w-0">
+                <p className="text-[10px] font-bold uppercase text-[#8F4B63] mb-1">Greedy</p>
+                {greedy?.isValid ? (
+                  <span className="badge badge-sage text-[10px]">Verified 100% Conflict-Free</span>
+                ) : (
+                  <span className="badge badge-peach text-[10px]">Violation</span>
+                )}
+              </div>
+              <div className="p-2.5 rounded-xl clay-inset min-w-0">
+                <p className="text-[10px] font-bold uppercase text-[#642F43] mb-1">Backtracking</p>
+                {backtracking?.isValid ? (
+                  <span className="badge badge-sage text-[10px]">Verified 100% Conflict-Free</span>
+                ) : (
+                  <span className="badge badge-peach text-[10px]">Violation</span>
+                )}
+              </div>
+            </div>
+            <p className="text-[11px] text-[#6F4253]">
+              Both algorithms rigorously enforce that adjacent vertices never share an examination slot.
+            </p>
+          </div>
+
+          <div className="p-4 space-y-2.5">
+            <p className="font-bold text-xs text-[#361522]">Search Operations</p>
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="p-2.5 rounded-xl clay-inset min-w-0">
+                <p className="text-[10px] font-bold uppercase text-[#8F4B63]">Greedy</p>
+                <p className="font-mono font-semibold text-xs text-[#361522] mt-0.5">
+                  {greedy ? `${greedy.operationsCount} color checks` : "..."}
+                </p>
+              </div>
+              <div className="p-2.5 rounded-xl clay-inset min-w-0">
+                <p className="text-[10px] font-bold uppercase text-[#642F43]">Backtracking</p>
+                <p className="font-mono font-semibold text-xs text-[#361522] mt-0.5">
+                  {backtracking ? `${backtracking.recursiveCalls} recursive calls` : "..."}
+                </p>
+              </div>
+            </div>
+            <p className="text-[11px] text-[#6F4253]">
+              Greedy makes a single pass over sorted vertices; Backtracking prunes and backtracks.
+            </p>
+          </div>
+
+          <div className="p-4 space-y-2.5">
+            <p className="font-bold text-xs text-[#361522]">Asymptotic Complexity</p>
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="p-2.5 rounded-xl clay-inset min-w-0">
+                <p className="text-[10px] font-bold uppercase text-[#8F4B63]">Greedy</p>
+                <p className="font-mono font-bold text-xs text-[#8F4B63] mt-0.5">O(V log V + E)</p>
+              </div>
+              <div className="p-2.5 rounded-xl clay-inset min-w-0">
+                <p className="text-[10px] font-bold uppercase text-[#642F43]">Backtracking</p>
+                <p className="font-mono font-bold text-xs text-[#642F43] mt-0.5">O(m<sup>V</sup>) worst-case</p>
+              </div>
+            </div>
+            <p className="text-[11px] text-[#6F4253]">
+              Graph coloring is an NP-Complete decision problem and NP-Hard optimization.
+            </p>
+          </div>
+        </div>
+
+        {/* Desktop Accessible Scroll Table (md+) */}
+        <div
+          role="region"
+          tabIndex={0}
+          aria-labelledby="comparison-matrix-heading"
+          className="hidden md:block examia-table-region"
+        >
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-[#F4E4E9] border-b border-[#C58E9B]/40 text-[#642F43] font-bold uppercase text-[10px] tracking-wider">
@@ -143,7 +258,7 @@ export default function ComparisonView({
                   {greedy ? `${greedy.numSlots} Slots` : "..."}
                 </td>
                 <td className="py-4 px-6 font-mono font-bold text-base text-[#642F43]">
-                  {backtracking ? `${backtracking.numSlots} Slots (Optimal &chi;)` : "..."}
+                  {backtracking ? `${backtracking.numSlots} Slots (Optimal \u03C7)` : "..."}
                 </td>
                 <td className="py-4 px-6 text-[11px] text-[#6F4253]">
                   Backtracking guarantees the exact minimum &chi;(G); Greedy provides an upper bound &le; &Delta;(G) + 1.
@@ -227,31 +342,32 @@ export default function ComparisonView({
       </div>
 
       {/* Visual Recharts Bar Charts (Requirement 12) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {/* Execution Time Chart */}
-        <div className="card-premium p-6">
-          <div className="flex items-center justify-between pb-3 border-b border-[#C58E9B]/32">
-            <div>
+        <div className="card-premium p-4 sm:p-6 min-w-0">
+          <div className="flex items-center justify-between gap-2 pb-3 border-b border-[#C58E9B]/32">
+            <div className="min-w-0">
               <h3 className="font-serif font-bold text-sm text-[#642F43]">
                 Execution Time Comparison (ms)
               </h3>
               <p className="text-[11px] text-[#6F4253]">Lower runtime is superior</p>
             </div>
-            <Clock className="w-4 h-4 text-[#642F43]" />
+            <Clock className="w-4 h-4 text-[#642F43] shrink-0" />
           </div>
 
-          <div className="h-64 mt-4 rounded-2xl clay-inset p-3">
+          <div className="h-60 sm:h-64 mt-4 rounded-2xl clay-inset p-2 sm:p-3 min-w-0">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={timeChartData} margin={{ top: 15, right: 20, left: -10, bottom: 20 }}>
+              <BarChart data={timeChartData} margin={{ top: 15, right: 12, left: 4, bottom: 16 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(100, 47, 67, 0.14)" />
                 <XAxis 
                   dataKey="name" 
-                  tick={{ fontSize: 11, fill: '#6F4253', fontWeight: 600 }} 
+                  tick={{ fontSize: 10, fill: '#6F4253', fontWeight: 600 }} 
                   interval={0}
                 />
                 <YAxis 
                   tick={{ fontSize: 10, fill: '#6F4253' }}
                   unit=" ms"
+                  width={62}
                 />
                 <Tooltip 
                   formatter={(val) => [`${val} ms`, "Execution Time"]}
@@ -268,30 +384,31 @@ export default function ComparisonView({
         </div>
 
         {/* Number of Slots Chart */}
-        <div className="card-premium p-6">
-          <div className="flex items-center justify-between pb-3 border-b border-[#C58E9B]/32">
-            <div>
+        <div className="card-premium p-4 sm:p-6 min-w-0">
+          <div className="flex items-center justify-between gap-2 pb-3 border-b border-[#C58E9B]/32">
+            <div className="min-w-0">
               <h3 className="font-serif font-bold text-sm text-[#642F43]">
                 Examination Slots (Colors) Needed
               </h3>
               <p className="text-[11px] text-[#6F4253]">Fewer slots minimizes examination days</p>
             </div>
-            <Layers className="w-4 h-4 text-[#642F43]" />
+            <Layers className="w-4 h-4 text-[#642F43] shrink-0" />
           </div>
 
-          <div className="h-64 mt-4 rounded-2xl clay-inset p-3">
+          <div className="h-60 sm:h-64 mt-4 rounded-2xl clay-inset p-2 sm:p-3 min-w-0">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={slotsChartData} margin={{ top: 15, right: 20, left: -10, bottom: 20 }}>
+              <BarChart data={slotsChartData} margin={{ top: 15, right: 12, left: 4, bottom: 16 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(100, 47, 67, 0.14)" />
                 <XAxis 
                   dataKey="name" 
-                  tick={{ fontSize: 11, fill: '#6F4253', fontWeight: 600 }} 
+                  tick={{ fontSize: 10, fill: '#6F4253', fontWeight: 600 }} 
                   interval={0}
                 />
                 <YAxis 
                   allowDecimals={false}
                   tick={{ fontSize: 10, fill: '#6F4253' }}
                   unit=" slots"
+                  width={54}
                 />
                 <Tooltip 
                   formatter={(val) => [`${val} Slots`, "Total Slots"]}
@@ -309,12 +426,12 @@ export default function ComparisonView({
       </div>
 
       {/* Mandatory Educational DAA Explanation (Requirement 12) */}
-      <div className="card-premium p-7">
-        <div className="flex items-start gap-4">
+      <div className="card-premium p-4 sm:p-7">
+        <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
           <div className="w-10 h-10 rounded-2xl bg-[#642F43] text-[#FDF8FA] border border-[#4A1F30] flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
             <BookOpen className="w-5 h-5" />
           </div>
-          <div className="space-y-3">
+          <div className="space-y-3 min-w-0">
             <h3 className="font-serif font-bold text-lg text-[#642F43]">
               Algorithmic Trade-Offs: Greedy vs. Backtracking
             </h3>
@@ -326,8 +443,8 @@ export default function ComparisonView({
                 <strong>Backtracking Graph Coloring:</strong> Systematically explores alternative assignments via recursive Depth-First Search. It can find a valid coloring for a specified slot budget <em>m</em> if one exists, or systematically determine the exact chromatic number &chi;(G). However, because graph coloring is NP-Complete, its worst-case time complexity is exponential <code>O(m^V)</code>.
               </p>
             </div>
-            <div className="pt-2 flex items-center gap-3 text-[11px] text-[#642F43] font-semibold">
-              <span className="badge badge-lavender">DAA Academic Finding</span>
+            <div className="pt-2 flex flex-wrap items-center gap-2 sm:gap-3 text-[11px] text-[#642F43] font-semibold">
+              <span className="badge badge-lavender shrink-0">DAA Academic Finding</span>
               <span>Welsh-Powell produces an optimal or near-optimal coloring for typical academic enrollment structures.</span>
             </div>
           </div>

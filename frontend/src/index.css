@@ -439,3 +439,116 @@ table {
     border: 1px solid #CCCCCC !important;
   }
 }
+
+/* ── Mobile & Tablet Responsiveness Foundations ── */
+@layer base {
+  html,
+  body,
+  #root {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  body {
+    overscroll-behavior-y: contain;
+    -webkit-tap-highlight-color: rgba(100, 47, 67, 0.14);
+  }
+}
+
+.examia-safe-pt {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.examia-safe-pb {
+  padding-bottom: max(1.25rem, calc(1rem + env(safe-area-inset-bottom, 0px)));
+}
+
+.examia-safe-drawer-pad {
+  padding-top: max(1rem, env(safe-area-inset-top, 0px));
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+.examia-table-region {
+  position: relative;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-gutter: stable;
+}
+
+.examia-table-region:focus-visible {
+  outline: 2px solid #642F43;
+  outline-offset: 2px;
+}
+
+/* Touch devices: prevent sticky hover shifts */
+@media (hover: none) and (pointer: coarse) {
+  .stat-card:hover,
+  .card-premium:hover {
+    transform: none;
+  }
+}
+
+/* Reduced motion support across loader, drawer, and UI transitions */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .examia-nav-pill,
+  .examia-drawer-sheet,
+  .examia-drawer-backdrop {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* ── Native <dialog> modal scroll containment & viewport sizing ── */
+dialog.examia-dialog:modal {
+  overscroll-behavior: contain;
+  max-height: calc(100dvh - 1.5rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+}
+
+dialog.examia-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+dialog.examia-dialog::backdrop {
+  background: rgba(54, 21, 34, 0.45);
+  backdrop-filter: blur(4px);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 639px) {
+  dialog.examia-dialog:modal {
+    max-width: calc(100dvw - 1.5rem);
+  }
+}
+
+/* ── Mobile Slide-Out Navigation Drawer (below lg: 1024px) ── */
+@media (max-width: 1023px) {
+  .examia-drawer-aside {
+    position: fixed;
+    inset-block: 0;
+    left: 0;
+    z-index: 40;
+    height: 100svh;
+    max-height: 100svh;
+    width: min(18.5rem, 82dvw);
+    transform: translateX(-100%);
+    pointer-events: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .examia-drawer-aside[data-mobile-open='true'] {
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+
+  #examia-navigation-drawer button,
+  #examia-navigation-drawer a {
+    min-height: 44px;
+  }
+}

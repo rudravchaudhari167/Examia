@@ -81,7 +81,7 @@ export default function LoadingScreen({ isReady, onExited }) {
       aria-live="polite"
       aria-label="Loading Examia workspace"
       data-closing={isClosing ? '' : undefined}
-      className="examia-loader-overlay fixed inset-0 z-[100] overflow-hidden select-none flex items-center justify-center bg-[#F4E6EA]"
+      className="examia-loader-overlay fixed inset-0 w-full h-dvh max-w-full z-[100] overflow-hidden select-none flex items-center justify-center bg-[#F4E6EA]"
     >
       {webglUnavailable ? (
         <div className="flex flex-col items-center justify-center px-6 text-center">
@@ -137,8 +137,8 @@ export default function LoadingScreen({ isReady, onExited }) {
 
           <div
             aria-hidden="true"
-            className="pointer-events-none fixed inset-x-0 flex flex-col items-center text-center px-6"
-            style={{ bottom: 'clamp(1.75rem, 6vh, 3.5rem)' }}
+            className="pointer-events-none fixed inset-x-0 flex flex-col items-center text-center px-4 sm:px-6"
+            style={{ bottom: 'calc(clamp(1.25rem, 6dvh, 3.5rem) + env(safe-area-inset-bottom, 0px))' }}
           >
             <span className="font-serif font-bold text-xl sm:text-2xl tracking-tight text-[#642F43]">
               examia.

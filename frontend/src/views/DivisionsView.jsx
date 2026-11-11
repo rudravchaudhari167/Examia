@@ -84,15 +84,16 @@ export default function DivisionsView({
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
         <div>
-          <h2 className="text-2xl font-serif font-bold text-[#642F43]">Student Cohorts &amp; Divisions</h2>
+          <h2 className="text-xl sm:text-2xl font-serif font-bold text-[#642F43]">Student Cohorts &amp; Divisions</h2>
           <p className="text-xs text-[#6F4253] mt-0.5">
             Student groups taking course exams. Conflicts arise whenever two examinations enroll the same division.
           </p>
         </div>
 
         <button
+          type="button"
           onClick={openAddModal}
-          className="btn-primary text-xs py-2 px-4 flex items-center gap-1.5 self-start sm:self-auto"
+          className="btn-primary text-xs min-h-[42px] py-2 px-4 flex items-center justify-center gap-1.5 w-full sm:w-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Add New Division</span>
@@ -100,7 +101,7 @@ export default function DivisionsView({
       </div>
 
       {/* Division Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
         {divisions.map(division => {
           // Subjects assigned to this division
           const assignedSubjects = subjects.filter(s => s.divisions.includes(division.name));
@@ -111,31 +112,35 @@ export default function DivisionsView({
           const divisionConflictsCount = (k * (k - 1)) / 2;
 
           return (
-            <div key={division.id} className="card-premium p-6 flex flex-col justify-between">
+            <div key={division.id} className="card-premium p-4 sm:p-6 flex flex-col justify-between min-w-0">
               <div>
                 {/* Header */}
-                <div className="flex items-start justify-between pb-3 border-b border-[#C58E9B]/32">
-                  <div>
+                <div className="flex items-start justify-between gap-2 pb-3 border-b border-[#C58E9B]/32">
+                  <div className="min-w-0">
                     <span className="badge badge-sage mb-1.5 text-xs font-bold">
                       {division.name}
                     </span>
-                    <h4 className="font-serif font-bold text-base text-[#642F43]">
+                    <h4 className="font-serif font-bold text-base text-[#642F43] break-words">
                       {division.department}
                     </h4>
                     <p className="text-xs text-[#6F4253]">{division.semester}</p>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <button
+                      type="button"
                       onClick={() => openEditModal(division)}
-                      className="p-1.5 rounded-xl clay-inset hover:bg-[#EED8DF] text-[#6F4253] hover:text-[#642F43] transition-colors"
+                      className="min-w-[38px] min-h-[38px] flex items-center justify-center rounded-xl clay-inset hover:bg-[#EED8DF] text-[#6F4253] hover:text-[#642F43] transition-colors"
+                      aria-label={`Edit ${division.name}`}
                       title="Edit Division"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
                     <button
+                      type="button"
                       onClick={() => onDeleteDivision(division.id)}
-                      className="p-1.5 rounded-xl clay-inset hover:bg-[#642F43] text-[#6F4253] hover:text-[#FDF8FA] transition-colors"
+                      className="min-w-[38px] min-h-[38px] flex items-center justify-center rounded-xl clay-inset hover:bg-[#642F43] text-[#6F4253] hover:text-[#FDF8FA] transition-colors"
+                      aria-label={`Delete ${division.name}`}
                       title="Delete Division"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -145,15 +150,15 @@ export default function DivisionsView({
 
                 {/* Metrics */}
                 <div className="grid grid-cols-2 gap-2 my-4">
-                  <div className="p-2.5 rounded-2xl clay-inset">
+                  <div className="p-2.5 rounded-2xl clay-inset min-w-0">
                     <p className="text-[10px] uppercase font-semibold text-[#6F4253]">Cohort Size</p>
                     <p className="text-sm font-bold text-[#361522] mt-0.5 flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5 text-[#642F43]" />
-                      {division.studentCount} Students
+                      <Users className="w-3.5 h-3.5 text-[#642F43] shrink-0" />
+                      <span>{division.studentCount} Students</span>
                     </p>
                   </div>
 
-                  <div className="p-2.5 rounded-2xl clay-inset">
+                  <div className="p-2.5 rounded-2xl clay-inset min-w-0">
                     <p className="text-[10px] uppercase font-semibold text-[#6F4253]">Induced Conflicts</p>
                     <p className="text-sm font-bold text-[#642F43] mt-0.5">
                       {divisionConflictsCount} Edge pairs
@@ -174,10 +179,10 @@ export default function DivisionsView({
                       {assignedSubjects.map(sub => (
                         <div 
                           key={sub.id}
-                          className="p-2.5 rounded-xl clay-inset text-xs flex items-center justify-between"
+                          className="p-2.5 rounded-xl clay-inset text-xs flex items-center justify-between gap-2 min-w-0"
                         >
-                          <span className="font-mono font-bold text-[#642F43]">{sub.code}</span>
-                          <span className="text-[#361522] truncate max-w-[150px] font-medium">{sub.name}</span>
+                          <span className="font-mono font-bold text-[#642F43] shrink-0">{sub.code}</span>
+                          <span className="text-[#361522] truncate min-w-0 flex-1 text-right font-medium">{sub.name}</span>
                         </div>
                       ))}
                     </div>
@@ -196,7 +201,7 @@ export default function DivisionsView({
       </div>
 
       {/* DAA Real-World Explanation Banner (Requirement 8 & 9) */}
-      <div className="card-premium p-6">
+      <div className="card-premium p-4 sm:p-6">
         <h4 className="font-serif font-bold text-base text-[#642F43] mb-1">
           How Division Overlap Governs Conflict Detection
         </h4>
@@ -229,7 +234,7 @@ export default function DivisionsView({
               placeholder="e.g. Division A"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full clay-inset rounded-xl px-3.5 py-2 text-xs text-[#361522] placeholder:text-[#6F4253]/75 focus:outline-none focus:ring-2 focus:ring-[#642F43]/30"
+              className="w-full min-h-[42px] clay-inset rounded-xl px-3.5 py-2 text-sm sm:text-xs text-[#361522] placeholder:text-[#6F4253]/75 focus:outline-none focus:ring-2 focus:ring-[#642F43]/30"
             />
           </div>
 
@@ -243,7 +248,7 @@ export default function DivisionsView({
               max="500"
               value={formData.studentCount}
               onChange={(e) => setFormData({ ...formData, studentCount: e.target.value })}
-              className="w-full clay-inset rounded-xl px-3.5 py-2 text-xs text-[#361522] focus:outline-none focus:ring-2 focus:ring-[#642F43]/30"
+              className="w-full min-h-[42px] clay-inset rounded-xl px-3.5 py-2 text-sm sm:text-xs text-[#361522] focus:outline-none focus:ring-2 focus:ring-[#642F43]/30"
             />
           </div>
 
@@ -256,7 +261,7 @@ export default function DivisionsView({
               placeholder="e.g. Computer Engineering"
               value={formData.department}
               onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-              className="w-full clay-inset rounded-xl px-3.5 py-2 text-xs text-[#361522] placeholder:text-[#6F4253]/75 focus:outline-none focus:ring-2 focus:ring-[#642F43]/30"
+              className="w-full min-h-[42px] clay-inset rounded-xl px-3.5 py-2 text-sm sm:text-xs text-[#361522] placeholder:text-[#6F4253]/75 focus:outline-none focus:ring-2 focus:ring-[#642F43]/30"
             />
           </div>
 
@@ -269,21 +274,21 @@ export default function DivisionsView({
               placeholder="e.g. Semester IV"
               value={formData.semester}
               onChange={(e) => setFormData({ ...formData, semester: e.target.value })}
-              className="w-full clay-inset rounded-xl px-3.5 py-2 text-xs text-[#361522] placeholder:text-[#6F4253]/75 focus:outline-none focus:ring-2 focus:ring-[#642F43]/30"
+              className="w-full min-h-[42px] clay-inset rounded-xl px-3.5 py-2 text-sm sm:text-xs text-[#361522] placeholder:text-[#6F4253]/75 focus:outline-none focus:ring-2 focus:ring-[#642F43]/30"
             />
           </div>
 
-          <div className="pt-3 border-t border-[#C58E9B]/32 flex items-center justify-end gap-3">
+          <div className="pt-3 border-t border-[#C58E9B]/32 flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2.5 sm:gap-3">
             <button
               type="button"
               onClick={() => setIsModalOpen(false)}
-              className="btn-secondary text-xs py-2 px-4"
+              className="btn-secondary text-xs min-h-[42px] py-2 px-4 w-full sm:w-auto"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="btn-primary text-xs py-2 px-5"
+              className="btn-primary text-xs min-h-[42px] py-2 px-5 w-full sm:w-auto"
             >
               {editingDivision ? "Save Changes" : "Create Division"}
             </button>

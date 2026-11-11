@@ -35,8 +35,11 @@ export default function Toast({ message, type = "success", onClose }) {
   const Icon = visuals.icon;
 
   return (
-    <div className="no-print fixed bottom-24 right-4 sm:right-6 z-50 animate-fade-in">
-      <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl border-2 ${visuals.border} ${visuals.bg} shadow-[0_14px_28px_-6px_rgba(74,31,48,0.22)] max-w-md`}>
+    <div
+      className="no-print fixed inset-x-3 sm:inset-x-auto sm:right-6 z-50 animate-fade-in"
+      style={{ bottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
+    >
+      <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl border-2 ${visuals.border} ${visuals.bg} shadow-[0_14px_28px_-6px_rgba(74,31,48,0.22)] w-full sm:w-auto sm:max-w-md`}>
         <Icon className={`w-5 h-5 ${visuals.iconColor} shrink-0`} />
         <p className="text-xs font-semibold text-[#361522] flex-1">{message}</p>
         <button

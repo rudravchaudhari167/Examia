@@ -74,7 +74,34 @@ export default function Sidebar({
   }, []);
 
   return (
-    <aside className="w-72 bg-[#FAF1F4] border-r border-[#C58E9B]/45 h-screen flex flex-col justify-between shrink-0 select-none z-20 rounded-r-[26px] shadow-[6px_0_24px_-8px_rgba(100,47,67,0.12)]">
+    <aside
+      id="examia-navigation-drawer"
+      tabIndex={-1}
+      aria-label="Primary navigation"
+      className="examia-drawer-aside relative w-72 bg-[#FAF1F4] border-r border-[#C58E9B]/45 lg:h-dvh flex flex-col justify-between shrink-0 select-none lg:z-20 rounded-r-[26px] shadow-[6px_0_24px_-8px_rgba(100,47,67,0.12)] examia-safe-drawer-pad lg:p-0 focus:outline-none"
+    >
+      <div className="lg:hidden absolute top-3 right-3 z-20">
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent('examia-close-mobile-nav'))}
+          aria-label="Close navigation menu"
+          className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl border border-[#C58E9B]/45 bg-[#FDF9FA]/95 text-[#642F43] hover:bg-[#F3E2E7] shadow-[0_2px_8px_-2px_rgba(100,47,67,0.12)] transition-colors"
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="w-5 h-5"
+          >
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+      </div>
       <div>
         {/* Brand Logo & Header */}
         <div className="p-6 pb-5 border-b border-[#C58E9B]/32">

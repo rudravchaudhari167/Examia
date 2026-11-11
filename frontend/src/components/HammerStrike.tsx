@@ -770,9 +770,10 @@ function __OriginkitBase_HammerStrike(props: Partial<Props>) {
         /* ---- sizing ---- */
         let dpr = 1
         const resize = () => {
-            dpr = Math.min(window.devicePixelRatio || 1, DPR_CAP)
             const cssW = canvas.clientWidth || host.clientWidth || 0
             const cssH = canvas.clientHeight || host.clientHeight || 0
+            const mobileCap = cssW > 0 && cssW < 640 ? 1.5 : DPR_CAP
+            dpr = Math.min(window.devicePixelRatio || 1, mobileCap)
             const w = Math.max(1, Math.round(cssW * dpr))
             const h = Math.max(1, Math.round(cssH * dpr))
             if (canvas.width !== w || canvas.height !== h) {
@@ -941,11 +942,9 @@ function __OriginkitBase_HammerStrike(props: Partial<Props>) {
         <div
             ref={hostRef}
             style={{
-                // Floor BEFORE the spread: the canvas is absolutely positioned,
-                // so the root has no in-flow content and collapses to a dot
-                // under Framer's Fit Content sizing.
-                minWidth: 1200,
-                minHeight: 800,
+                // Keep minWidth/minHeight at 0 so small mobile viewports never overflow.
+                minWidth: 0,
+                minHeight: 0,
                 width: "100%",
                 height: "100%",
                 position: "relative",

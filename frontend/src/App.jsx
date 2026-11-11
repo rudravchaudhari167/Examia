@@ -272,24 +272,34 @@ export default function App() {
   return (
     <>
       <div
+        id="examia-app-shell"
         data-loading={showLoader && !isAppReady ? '' : undefined}
-        className="examia-app-shell flex h-screen bg-[#F4E6EA] overflow-hidden text-[#361522]"
+        className="examia-app-shell flex h-dvh w-full max-w-full bg-[#F4E6EA] overflow-hidden text-[#361522]"
       >
       {/* Sidebar Navigation */}
       <Sidebar
         activeTab={activeTab}
-        setActiveTab={handleTabChange}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenAbout={() => setIsAboutOpen(true)}
+        setActiveTab={(tab) => {
+          window.dispatchEvent(new CustomEvent('examia-close-mobile-nav'));
+          handleTabChange(tab);
+        }}
+        onOpenSettings={() => {
+          window.dispatchEvent(new CustomEvent('examia-close-mobile-nav'));
+          setIsSettingsOpen(true);
+        }}
+        onOpenAbout={() => {
+          window.dispatchEvent(new CustomEvent('examia-close-mobile-nav'));
+          setIsAboutOpen(true);
+        }}
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <div id="examia-main-shell" className="flex-1 min-w-0 flex flex-col h-dvh overflow-hidden">
         {/* Topbar */}
         <Topbar activeTab={activeTab} />
 
         {/* Scrollable View Area */}
-        <main ref={mainScrollRef} className="examia-main-scroll flex-1 overflow-y-auto px-6 sm:px-10 py-6">
+        <main ref={mainScrollRef} className="examia-main-scroll flex-1 overflow-y-auto overscroll-y-contain px-3.5 sm:px-6 lg:px-10 py-4 sm:py-6 examia-safe-pb">
           <div key={renderedTab} className="max-w-7xl mx-auto">
             {renderedTab === 'overview' && (
               <OverviewView
@@ -388,7 +398,7 @@ export default function App() {
               {rooms.map(room => (
                 <div 
                   key={room.id}
-                  className="p-2.5 rounded-xl clay-inset flex items-center justify-between text-xs"
+                  className="p-2.5 rounded-xl clay-inset flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 text-xs min-w-0"
                 >
                   <div>
                     <span className="font-bold text-[#361522]">{room.name}</span>
@@ -441,7 +451,7 @@ export default function App() {
           </div>
 
           {/* Reset Action */}
-          <div className="pt-4 border-t border-[#C58E9B]/35 flex items-center justify-between">
+          <div className="pt-4 border-t border-[#C58E9B]/35 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <span className="text-xs text-[#6F4253]">Reset curriculum and halls to factory state:</span>
             <button
               onClick={() => {
