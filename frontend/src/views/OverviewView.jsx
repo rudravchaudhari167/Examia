@@ -65,14 +65,13 @@ export default function OverviewView({
       </div>
 
       {/* 4 Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
         <StatCard
           title="Total Subjects"
           value={subjects.length}
           subtitle={`${totalStudents} cumulative examinees`}
           icon={BookOpen}
           accentColor="lavender"
-          badgeText="Active"
         />
         <StatCard
           title="Student Divisions"
@@ -80,7 +79,6 @@ export default function OverviewView({
           subtitle="Enrolled student cohorts"
           icon={Users}
           accentColor="sage"
-          badgeText="Cohorts"
         />
         <StatCard
           title="Detected Conflicts"
@@ -88,7 +86,6 @@ export default function OverviewView({
           subtitle={`Graph density: ${(graph.density * 100).toFixed(1)}%`}
           icon={Share2}
           accentColor="peach"
-          badgeText={graph.edgeCount > 0 ? "Shared" : "None"}
         />
         <StatCard
           title="Required Time Slots"
@@ -96,7 +93,6 @@ export default function OverviewView({
           subtitle={timetableResult ? `Verified by ${timetableResult.algorithmName.split(' ')[0]}` : "Run solver to evaluate"}
           icon={CalendarCheck}
           accentColor="rose"
-          badgeText={timetableResult ? "Optimal" : "Awaiting"}
         />
       </div>
 
