@@ -228,15 +228,6 @@ export default function GenerateTimetableView({
                 )}
               </div>
             </div>
-
-            {/* Execution Host status */}
-            <div className="p-3 rounded-xl clay-inset text-xs text-[#361522] flex items-center justify-between">
-              <span className="text-[#6F4253] font-medium">Engine Execution Host:</span>
-              <span className="font-bold text-[#642F43] flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#642F43]" />
-                Browser DAA Engine (Local JS)
-              </span>
-            </div>
           </div>
 
           {/* Right Column: Calendar Constraints */}
@@ -378,9 +369,6 @@ export default function GenerateTimetableView({
                 </h4>
                 <p className="text-xs text-[#361522] mt-0.5">
                   Scheduled <strong>{subjects.length} subjects</strong> across <strong>{generationSummary.numSlots} examination slots</strong> in {generationSummary.executionTimeMs} ms.
-                </p>
-                <p className="text-[11px] text-[#642F43] font-bold mt-1">
-                  Engine: {generationSummary.executedOn}
                 </p>
               </div>
             </div>

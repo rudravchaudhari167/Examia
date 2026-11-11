@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   GitCompare, Play, Zap, Clock, ShieldCheck, CheckCircle2, 
-  AlertTriangle, RefreshCw, Layers, Cpu, BookOpen, BarChart2
+  AlertTriangle, RefreshCw, Layers, BookOpen, BarChart2
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
@@ -106,19 +106,6 @@ export default function ComparisonView({
         <div className="p-4 rounded-2xl bg-[#F4E4E9] border border-[#642F43]/45 text-xs text-[#642F43] flex items-center gap-2 font-medium">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
-        </div>
-      )}
-
-      {/* Engine Origin Badge */}
-      {benchmarkResult && (
-        <div className="px-4 py-3 rounded-2xl clay-inset text-xs text-[#6F4253] flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Cpu className="w-4 h-4 text-[#642F43]" />
-            <span>
-              Real-Time Benchmark Executed On: <strong className="text-[#361522]">{benchmarkResult.executedOn}</strong>
-            </span>
-          </div>
-          <span className="font-mono text-[11px] text-[#642F43] font-bold">100% Unfabricated Metrics</span>
         </div>
       )}
 

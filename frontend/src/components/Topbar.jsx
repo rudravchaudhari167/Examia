@@ -105,7 +105,7 @@ export default function Topbar({
 
       {/* Right: Avatar, Notification, Profile */}
       <div className="flex items-center gap-3 sm:gap-3.5 shrink-0">
-        <UserAvatar name="Kiko" size={36} />
+        <UserAvatar name="Kiko" size={42} />
 
         {/* Notifications */}
         <div className="relative">
@@ -130,14 +130,6 @@ export default function Topbar({
                   <p className="font-semibold text-[#361522]">Conflict Detection Active</p>
                   <p className="text-[11px] text-[#6F4253] mt-0.5">
                     Edges automatically recalculate upon any change to student divisions.
-                  </p>
-                </div>
-                <div className="p-2.5 rounded-xl clay-inset">
-                  <p className="font-semibold text-[#361522]">
-                    Browser In-Memory Engine
-                  </p>
-                  <p className="text-[11px] text-[#6F4253] mt-0.5">
-                    Operating in client-side standalone execution mode.
                   </p>
                 </div>
               </div>
