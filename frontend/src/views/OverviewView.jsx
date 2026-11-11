@@ -1,8 +1,17 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   BookOpen, Users, Share2, CalendarCheck, Sparkles
 } from 'lucide-react';
 import StatCard from '../components/StatCard';
+
+/** Returns the time-of-day greeting for the user's local clock. */
+function getGreetingForDate(date = new Date()) {
+  const hour = date.getHours();
+  if (hour >= 5 && hour < 12) return 'Good morning';
+  if (hour >= 12 && hour < 17) return 'Good afternoon';
+  if (hour >= 17 && hour < 21) return 'Good evening';
+  return 'Good night';
+}
 
 export default function OverviewView({ 
   subjects, 
@@ -12,6 +21,28 @@ export default function OverviewView({
   setActiveTab,
   onOpenAddSubject
 }) {
+  const [greeting, setGreeting] = useState(() => getGreetingForDate());
+
+  useEffect(() => {
+    const syncGreeting = () => {
+      setGreeting((prev) => {
+        const next = getGreetingForDate();
+        return prev === next ? prev : next;
+      });
+    };
+
+    const intervalId = setInterval(syncGreeting, 1000);
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') syncGreeting();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, []);
+
   const totalStudents = subjects.reduce((sum, s) => sum + (s.studentCount || 0), 0);
   const slotsRequired = timetableResult ? timetableResult.numSlots : (graph.subjects.length > 0 ? "Pending" : 0);
 
@@ -22,7 +53,7 @@ export default function OverviewView({
         <div className="relative z-10 max-w-2xl">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/12 border border-[#E8CBD3]/35 text-[#F6E6EB] mb-3">Academic Excellence &middot; DAA Engine</span>
           <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#FDF8FA] tracking-tight leading-tight">
-            Good morning, Administrator
+            {greeting}, Administrator
           </h1>
           <p className="text-sm text-[#F0D9E0] mt-2 font-sans leading-relaxed">
             Here's an overview of your examination scheduling workspace. Graph coloring heuristics and recursive backtracking are active to guarantee 100% conflict-free sessions.
