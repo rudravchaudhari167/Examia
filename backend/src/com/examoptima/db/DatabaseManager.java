@@ -897,17 +897,4 @@ public class DatabaseManager {
         }
         return runs;
     }
-
-    public static class ClassroomInUseException extends RuntimeException {
-        private final List<Map<String, Object>> usages;
-
-        public ClassroomInUseException(String message, List<Map<String, Object>> usages) {
-            super(message);
-            this.usages = usages;
-        }
-
-        public List<Map<String, Object>> getUsages() {
-            return usages;
-        }
-    }
 }

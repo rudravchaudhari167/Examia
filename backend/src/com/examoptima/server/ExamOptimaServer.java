@@ -2,8 +2,8 @@ package com.examoptima.server;
 
 import com.examoptima.algorithm.BacktrackingColoring;
 import com.examoptima.algorithm.GreedyColoring;
+import com.examoptima.db.ClassroomInUseException;
 import com.examoptima.db.DatabaseManager;
-import com.examoptima.db.DatabaseManager.ClassroomInUseException;
 import com.examoptima.model.ColoringResult;
 import com.examoptima.model.ConflictEdge;
 import com.examoptima.model.ConflictGraph;
