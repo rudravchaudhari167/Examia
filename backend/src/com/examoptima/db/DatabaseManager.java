@@ -167,6 +167,7 @@ public class DatabaseManager {
                 + "  num_days INTEGER NOT NULL CHECK(num_days > 0),"
                 + "  max_exams_per_day INTEGER NOT NULL CHECK(max_exams_per_day > 0),"
                 + "  session_durations_json TEXT NOT NULL DEFAULT '[180,180]',"
+                + "  session_start_times_json TEXT NOT NULL DEFAULT '[\"09:00\",\"13:00\"]',"
                 + "  updated_at TEXT DEFAULT CURRENT_TIMESTAMP"
                 + ");\n"
                 + "CREATE TABLE IF NOT EXISTS generated_timetables ("
@@ -267,8 +268,8 @@ public class DatabaseManager {
         sb.append("INSERT INTO classrooms(id, name, building, capacity, is_available) VALUES ('room-105', 'Mega Hall 201', 'Examination Complex', 150, 1);\n");
 
         // Default exam configuration
-        sb.append("INSERT INTO exam_configurations(id, start_date, daily_start_time, exam_duration_minutes, break_duration_minutes, num_days, max_exams_per_day, session_durations_json) "
-                + "VALUES (1, '2026-11-20', '09:00', 180, 60, 5, 2, '[180,180]');\n");
+        sb.append("INSERT INTO exam_configurations(id, start_date, daily_start_time, exam_duration_minutes, break_duration_minutes, num_days, max_exams_per_day, session_durations_json, session_start_times_json) "
+                + "VALUES (1, '2026-11-20', '09:00', 180, 60, 5, 2, '[180,180]', '[\"09:00\",\"13:00\"]');\n");
 
         sb.append("INSERT OR REPLACE INTO schema_meta(key, value) VALUES ('seeded', '1');\n");
         executeTransaction(sb.toString());
@@ -403,12 +404,22 @@ public class DatabaseManager {
 
     private void ensureExamConfigSessionDurationsColumn() {
         List<Map<String, Object>> cols = queryRows("PRAGMA table_info(exam_configurations);");
+        boolean hasDurations = false;
+        boolean hasStartTimes = false;
         for (Map<String, Object> col : cols) {
-            if ("session_durations_json".equals(JsonHelper.getString(col, "name", ""))) {
-                return;
+            String colName = JsonHelper.getString(col, "name", "");
+            if ("session_durations_json".equals(colName)) {
+                hasDurations = true;
+            } else if ("session_start_times_json".equals(colName)) {
+                hasStartTimes = true;
             }
         }
-        executeTransaction("ALTER TABLE exam_configurations ADD COLUMN session_durations_json TEXT NOT NULL DEFAULT '[180,180]';");
+        if (!hasDurations) {
+            executeTransaction("ALTER TABLE exam_configurations ADD COLUMN session_durations_json TEXT NOT NULL DEFAULT '[180,180]';");
+        }
+        if (!hasStartTimes) {
+            executeTransaction("ALTER TABLE exam_configurations ADD COLUMN session_start_times_json TEXT NOT NULL DEFAULT '[\"09:00\",\"13:00\"]';");
+        }
     }
 
     private static List<Integer> normalizeSessionDurations(List<Integer> raw, int fallbackMin, int maxPerDay) {
@@ -424,24 +435,44 @@ public class DatabaseManager {
         return normalized;
     }
 
+    private static List<String> normalizeSessionStartTimes(
+            List<String> raw,
+            String dailyStartTime,
+            List<Integer> durations,
+            int breakMin,
+            int maxPerDay
+    ) {
+        return com.examoptima.service.TimetablePlanner.resolveSessionStartTimes(
+                raw,
+                dailyStartTime,
+                durations,
+                breakMin,
+                maxPerDay
+        );
+    }
+
     public synchronized Map<String, Object> getConfig() {
         List<Map<String, Object>> rows = queryRows(
-                "SELECT start_date, daily_start_time, exam_duration_minutes, break_duration_minutes, num_days, max_exams_per_day, session_durations_json "
+                "SELECT start_date, daily_start_time, exam_duration_minutes, break_duration_minutes, num_days, max_exams_per_day, session_durations_json, session_start_times_json "
                         + "FROM exam_configurations WHERE id = 1;"
         );
         Map<String, Object> cfg = new LinkedHashMap<String, Object>();
         if (rows.isEmpty()) {
             List<Integer> defaults = normalizeSessionDurations(null, 180, 2);
+            List<String> defaultStarts = normalizeSessionStartTimes(null, "09:00", defaults, 60, 2);
             cfg.put("startDate", "2026-11-20");
-            cfg.put("dailyStartTime", "09:00");
+            cfg.put("dailyStartTime", defaultStarts.get(0));
             cfg.put("examDurationMinutes", Integer.valueOf(180));
             cfg.put("breakDurationMinutes", Integer.valueOf(60));
             cfg.put("numDays", Integer.valueOf(5));
             cfg.put("maxExamsPerDay", Integer.valueOf(2));
             cfg.put("sessionDurationsMinutes", defaults);
+            cfg.put("sessionStartTimes", defaultStarts);
         } else {
             Map<String, Object> r = rows.get(0);
+            String baseStart = JsonHelper.getString(r, "daily_start_time", "09:00");
             int baseDuration = JsonHelper.getInt(r, "exam_duration_minutes", 180);
+            int breakMin = JsonHelper.getInt(r, "break_duration_minutes", 60);
             int maxPerDay = JsonHelper.getInt(r, "max_exams_per_day", 2);
             String jsonStr = JsonHelper.getString(r, "session_durations_json", "");
             List<Integer> parsed = null;
@@ -451,30 +482,49 @@ public class DatabaseManager {
                 parsed = JsonHelper.getIntList(wrapper, "arr");
             }
             List<Integer> sessionDurations = normalizeSessionDurations(parsed, baseDuration, maxPerDay);
+
+            String startsJsonStr = JsonHelper.getString(r, "session_start_times_json", "");
+            List<String> parsedStarts = null;
+            if (!startsJsonStr.isEmpty()) {
+                Map<String, Object> wrapper = new LinkedHashMap<String, Object>();
+                wrapper.put("arr", JsonHelper.parse(startsJsonStr));
+                parsedStarts = JsonHelper.getStringList(wrapper, "arr");
+            }
+            List<String> sessionStarts = normalizeSessionStartTimes(parsedStarts, baseStart, sessionDurations, breakMin, maxPerDay);
+
             cfg.put("startDate", JsonHelper.getString(r, "start_date", "2026-11-20"));
-            cfg.put("dailyStartTime", JsonHelper.getString(r, "daily_start_time", "09:00"));
+            cfg.put("dailyStartTime", sessionStarts.get(0));
             cfg.put("examDurationMinutes", sessionDurations.get(0));
-            cfg.put("breakDurationMinutes", Integer.valueOf(JsonHelper.getInt(r, "break_duration_minutes", 60)));
+            cfg.put("breakDurationMinutes", Integer.valueOf(breakMin));
             cfg.put("numDays", Integer.valueOf(JsonHelper.getInt(r, "num_days", 5)));
             cfg.put("maxExamsPerDay", Integer.valueOf(maxPerDay));
             cfg.put("sessionDurationsMinutes", sessionDurations);
+            cfg.put("sessionStartTimes", sessionStarts);
         }
         return cfg;
     }
 
     public synchronized void saveConfig(String startDate, String dailyStartTime, int examDurationMinutes,
             int breakDurationMinutes, int numDays, int maxExamsPerDay) {
-        saveConfig(startDate, dailyStartTime, examDurationMinutes, breakDurationMinutes, numDays, maxExamsPerDay, null);
+        saveConfig(startDate, dailyStartTime, examDurationMinutes, breakDurationMinutes, numDays, maxExamsPerDay, null, null);
     }
 
     public synchronized void saveConfig(String startDate, String dailyStartTime, int examDurationMinutes,
             int breakDurationMinutes, int numDays, int maxExamsPerDay, List<Integer> sessionDurationsMinutes) {
+        saveConfig(startDate, dailyStartTime, examDurationMinutes, breakDurationMinutes, numDays, maxExamsPerDay, sessionDurationsMinutes, null);
+    }
+
+    public synchronized void saveConfig(String startDate, String dailyStartTime, int examDurationMinutes,
+            int breakDurationMinutes, int numDays, int maxExamsPerDay, List<Integer> sessionDurationsMinutes, List<String> sessionStartTimes) {
         List<Integer> normalized = normalizeSessionDurations(sessionDurationsMinutes, examDurationMinutes, maxExamsPerDay);
+        List<String> normalizedStarts = normalizeSessionStartTimes(sessionStartTimes, dailyStartTime, normalized, breakDurationMinutes, maxExamsPerDay);
+        String firstStart = normalizedStarts.get(0);
         int firstDuration = normalized.get(0).intValue();
         String durationsJson = JsonHelper.toJson(normalized);
-        String sql = "INSERT INTO exam_configurations(id, start_date, daily_start_time, exam_duration_minutes, break_duration_minutes, num_days, max_exams_per_day, session_durations_json, updated_at) "
-                + "VALUES (1, " + sqlStr(startDate) + ", " + sqlStr(dailyStartTime) + ", "
-                + firstDuration + ", " + breakDurationMinutes + ", " + numDays + ", " + maxExamsPerDay + ", " + sqlStr(durationsJson) + ", CURRENT_TIMESTAMP) "
+        String startsJson = JsonHelper.toJson(normalizedStarts);
+        String sql = "INSERT INTO exam_configurations(id, start_date, daily_start_time, exam_duration_minutes, break_duration_minutes, num_days, max_exams_per_day, session_durations_json, session_start_times_json, updated_at) "
+                + "VALUES (1, " + sqlStr(startDate) + ", " + sqlStr(firstStart) + ", "
+                + firstDuration + ", " + breakDurationMinutes + ", " + numDays + ", " + maxExamsPerDay + ", " + sqlStr(durationsJson) + ", " + sqlStr(startsJson) + ", CURRENT_TIMESTAMP) "
                 + "ON CONFLICT(id) DO UPDATE SET "
                 + "start_date = excluded.start_date, "
                 + "daily_start_time = excluded.daily_start_time, "
@@ -483,6 +533,7 @@ public class DatabaseManager {
                 + "num_days = excluded.num_days, "
                 + "max_exams_per_day = excluded.max_exams_per_day, "
                 + "session_durations_json = excluded.session_durations_json, "
+                + "session_start_times_json = excluded.session_start_times_json, "
                 + "updated_at = CURRENT_TIMESTAMP;";
         executeTransaction(sql);
     }

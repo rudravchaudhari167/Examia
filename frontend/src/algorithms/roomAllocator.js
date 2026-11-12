@@ -39,48 +39,95 @@ export function resolveSessionDurationsMinutes(config) {
   return resolved;
 }
 
+export function formatMinutes24h(totalMinutes) {
+  const clamped = Math.max(0, Math.min(1439, Math.round(totalMinutes)));
+  const h = Math.floor(clamped / 60);
+  const m = clamped % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+export function resolveSessionStartTimes(config) {
+  const maxPerDay = Number(config?.maxExamsPerDay) || 0;
+  if (maxPerDay <= 0) return [];
+  const durations = resolveSessionDurationsMinutes(config);
+  const raw = Array.isArray(config?.sessionStartTimes) ? config.sessionStartTimes : [];
+  const baseMin = parseTimeToMinutes(config?.dailyStartTime);
+  const safeBreak = Number.isFinite(Number(config?.breakDurationMinutes))
+    ? Math.max(0, Number(config.breakDurationMinutes))
+    : 60;
+
+  let cursorMin = baseMin !== null ? baseMin : 9 * 60;
+  const resolved = [];
+  for (let i = 0; i < maxPerDay; i++) {
+    const candidateMin = i < raw.length ? parseTimeToMinutes(raw[i]) : null;
+    const startMin = candidateMin !== null ? candidateMin : Math.min(1439, Math.max(0, cursorMin));
+    resolved.push(formatMinutes24h(startMin));
+    cursorMin = startMin + (durations[i] || 180) + safeBreak;
+  }
+  return resolved;
+}
+
 export function buildDailySessionPreview(config) {
-  const startMin = parseTimeToMinutes(config?.dailyStartTime);
   const breakMin = Number(config?.breakDurationMinutes);
   const maxPerDay = Number(config?.maxExamsPerDay) || 0;
 
-  if (startMin === null || !Number.isFinite(breakMin) || breakMin < 0 || maxPerDay <= 0) {
+  if (!Number.isFinite(breakMin) || breakMin < 0 || maxPerDay <= 0) {
     return { isValid: false, error: 'Enter valid timing values.', sessions: [] };
   }
 
   const durations = resolveSessionDurationsMinutes(config);
-  for (let i = 0; i < durations.length; i++) {
-    if (!Number.isFinite(durations[i]) || durations[i] < 15 || durations[i] > 720) {
+  const startTimes = resolveSessionStartTimes(config);
+  const rawStartTimes = Array.isArray(config?.sessionStartTimes) ? config.sessionStartTimes : null;
+
+  const sessions = [];
+  let prevEnd = -1;
+
+  for (let i = 0; i < maxPerDay; i++) {
+    const startTime24 = startTimes[i];
+    const explicitInvalid = rawStartTimes && i < rawStartTimes.length && parseTimeToMinutes(rawStartTimes[i]) === null;
+    const s = parseTimeToMinutes(startTime24);
+    if (explicitInvalid || s === null) {
+      return {
+        isValid: false,
+        error: `Select a valid start time for Session ${i + 1}.`,
+        sessions: [],
+      };
+    }
+
+    const dur = durations[i];
+    if (!Number.isFinite(dur) || dur < 15 || dur > 720) {
       return {
         isValid: false,
         error: `Session ${i + 1} duration must be between 0.25 and 12 hours (15 to 720 minutes).`,
         sessions: [],
       };
     }
-  }
 
-  let cursor = startMin;
-  const sessions = [];
-  for (let i = 0; i < maxPerDay; i++) {
-    const dur = durations[i];
-    const s = cursor;
+    if (i > 0 && s < prevEnd) {
+      return {
+        isValid: false,
+        error: `Session ${i + 1} start time (${formatMinutes12h(s)}) overlaps Session ${i} (ends at ${formatMinutes12h(prevEnd)}).`,
+        sessions: [],
+      };
+    }
+
     const e = s + dur;
+    if (e > 1440) {
+      return {
+        isValid: false,
+        error: `Session ${i + 1} extends past midnight (${formatMinutes12h(s)} + ${dur} min). Adjust session time or duration.`,
+        sessions: [],
+      };
+    }
+
     sessions.push({
       sessionIndex: i + 1,
+      startTime24,
       durationMinutes: dur,
       startTime: formatMinutes12h(s),
       endTime: formatMinutes12h(e),
     });
-    cursor = e + breakMin;
-  }
-
-  const lastEnd = startMin + durations.reduce((sum, d) => sum + d, 0) + (maxPerDay - 1) * breakMin;
-  if (lastEnd > 1440) {
-    return {
-      isValid: false,
-      error: 'Daily exams and breaks extend past midnight. Reduce exams per day, session durations, or start earlier.',
-      sessions: [],
-    };
+    prevEnd = e;
   }
 
   return { isValid: true, error: null, sessions };

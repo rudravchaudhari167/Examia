@@ -465,9 +465,13 @@ public class ExamOptimaServer {
                             ? JsonHelper.getIntList(body, "sessionDurationsMinutes")
                             : null;
                     List<Integer> sessionDurations = TimetablePlanner.resolveSessionDurations(rawDurations, durationMin, maxPerDay);
+                    List<String> rawStartTimes = body.containsKey("sessionStartTimes")
+                            ? JsonHelper.getStringList(body, "sessionStartTimes")
+                            : null;
+                    List<String> sessionStarts = TimetablePlanner.resolveSessionStartTimes(rawStartTimes, dailyStart, sessionDurations, breakMin, maxPerDay);
 
-                    TimetablePlanner.validateConfig(startDate, dailyStart, durationMin, breakMin, numDays, maxPerDay, sessionDurations);
-                    db.saveConfig(startDate, dailyStart, sessionDurations.get(0).intValue(), breakMin, numDays, maxPerDay, sessionDurations);
+                    TimetablePlanner.validateConfig(startDate, sessionStarts.get(0), durationMin, breakMin, numDays, maxPerDay, sessionDurations, sessionStarts);
+                    db.saveConfig(startDate, sessionStarts.get(0), sessionDurations.get(0).intValue(), breakMin, numDays, maxPerDay, sessionDurations, sessionStarts);
                     sendResponse(exchange, 200, JsonHelper.toJson(db.getConfig()));
                     return;
                 }
@@ -509,9 +513,13 @@ public class ExamOptimaServer {
                             ? JsonHelper.getIntList(incoming, "sessionDurationsMinutes")
                             : null;
                     List<Integer> sessionDurations = TimetablePlanner.resolveSessionDurations(rawDurations, durationMin, maxPerDay);
+                    List<String> rawStartTimes = incoming.containsKey("sessionStartTimes")
+                            ? JsonHelper.getStringList(incoming, "sessionStartTimes")
+                            : null;
+                    List<String> sessionStarts = TimetablePlanner.resolveSessionStartTimes(rawStartTimes, dailyStart, sessionDurations, breakMin, maxPerDay);
 
-                    TimetablePlanner.validateConfig(startDate, dailyStart, durationMin, breakMin, numDays, maxPerDay, sessionDurations);
-                    db.saveConfig(startDate, dailyStart, sessionDurations.get(0).intValue(), breakMin, numDays, maxPerDay, sessionDurations);
+                    TimetablePlanner.validateConfig(startDate, sessionStarts.get(0), durationMin, breakMin, numDays, maxPerDay, sessionDurations, sessionStarts);
+                    db.saveConfig(startDate, sessionStarts.get(0), sessionDurations.get(0).intValue(), breakMin, numDays, maxPerDay, sessionDurations, sessionStarts);
                     cfg = db.getConfig();
                 }
 

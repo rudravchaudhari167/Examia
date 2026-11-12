@@ -1,7 +1,11 @@
 import { buildConflictGraph } from '../algorithms/graph';
 import { runGreedyColoring } from '../algorithms/greedyColoring';
 import { runBacktrackingColoring } from '../algorithms/backtrackingColoring';
-import { buildDailySessionPreview, resolveSessionDurationsMinutes } from '../algorithms/roomAllocator';
+import {
+  buildDailySessionPreview,
+  resolveSessionDurationsMinutes,
+  resolveSessionStartTimes,
+} from '../algorithms/roomAllocator';
 
 const STORAGE_KEY = 'examia_local_fallback_db_v1';
 
@@ -34,6 +38,7 @@ function createInitialDb() {
       numDays: 5,
       maxExamsPerDay: 2,
       sessionDurationsMinutes: [180, 180],
+      sessionStartTimes: ['09:00', '13:00'],
     },
     latestTimetable: null,
     algoRuns: { greedy: null, backtracking: null },
@@ -438,10 +443,16 @@ export const localFallbackApi = {
   saveExamConfiguration(cfg) {
     const db = readDb();
     const normalizedDurations = resolveSessionDurationsMinutes(cfg);
+    const normalizedStarts = resolveSessionStartTimes({
+      ...cfg,
+      sessionDurationsMinutes: normalizedDurations,
+    });
     const normalizedCfg = {
       ...cfg,
+      dailyStartTime: normalizedStarts[0] || cfg.dailyStartTime || '09:00',
       examDurationMinutes: normalizedDurations[0] || Number(cfg.examDurationMinutes) || 180,
       sessionDurationsMinutes: normalizedDurations,
+      sessionStartTimes: normalizedStarts,
     };
     const preview = buildDailySessionPreview(normalizedCfg);
     if (!preview.isValid) {
@@ -455,6 +466,7 @@ export const localFallbackApi = {
       numDays: Number(normalizedCfg.numDays),
       maxExamsPerDay: Number(normalizedCfg.maxExamsPerDay),
       sessionDurationsMinutes: normalizedDurations,
+      sessionStartTimes: normalizedStarts,
     };
     saveDb(db);
     return db.config;

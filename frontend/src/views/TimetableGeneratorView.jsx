@@ -20,6 +20,7 @@ import {
   buildDailySessionPreview,
   formatIsoDateDisplay,
   resolveSessionDurationsMinutes,
+  resolveSessionStartTimes,
 } from '../algorithms/roomAllocator';
 import { validateSchedule } from '../algorithms/graph';
 import { SLOT_PALETTES } from '../data/defaultData';
@@ -56,6 +57,16 @@ function buildSessionDurationsHours(cfg) {
   }).map((m) => minutesToHoursString(m));
 }
 
+function buildSessionStartTimes(cfg) {
+  return resolveSessionStartTimes({
+    maxExamsPerDay: cfg?.maxExamsPerDay ?? 2,
+    dailyStartTime: cfg?.dailyStartTime ?? '09:00',
+    breakDurationMinutes: cfg?.breakDurationMinutes ?? 60,
+    sessionDurationsMinutes: cfg?.sessionDurationsMinutes,
+    sessionStartTimes: cfg?.sessionStartTimes,
+  });
+}
+
 export default function TimetableGeneratorView({
   subjects,
   classrooms = [],
@@ -81,6 +92,7 @@ export default function TimetableGeneratorView({
     startDate: config?.startDate || '2026-11-20',
     dailyStartTime: config?.dailyStartTime || '09:00',
     sessionDurationsHours: buildSessionDurationsHours(config),
+    sessionStartTimes: buildSessionStartTimes(config),
     breakDurationHours: minutesToHoursString(config?.breakDurationMinutes ?? 60),
     numDays: String(config?.numDays ?? 5),
     maxExamsPerDay: String(config?.maxExamsPerDay ?? 2),
@@ -92,6 +104,7 @@ export default function TimetableGeneratorView({
       startDate: config.startDate || '2026-11-20',
       dailyStartTime: config.dailyStartTime || '09:00',
       sessionDurationsHours: buildSessionDurationsHours(config),
+      sessionStartTimes: buildSessionStartTimes(config),
       breakDurationHours: minutesToHoursString(config.breakDurationMinutes ?? 60),
       numDays: String(config.numDays ?? 5),
       maxExamsPerDay: String(config.maxExamsPerDay ?? 2),
@@ -106,6 +119,55 @@ export default function TimetableGeneratorView({
     }
   }, [latestTimetable?.algorithmKey]);
 
+  const handleDailyStartTimeChange = (rawVal) => {
+    setDraftConfig((prev) => {
+      const count = Math.max(1, Math.min(10, parseInt(prev.maxExamsPerDay, 10) || prev.sessionDurationsHours?.length || 2));
+      const durationsMin = Array.from({ length: count }, (_, i) =>
+        Math.round((parseFloat(prev.sessionDurationsHours?.[i]) || 3) * 60)
+      );
+      const breakMin = Number.isFinite(parseFloat(prev.breakDurationHours))
+        ? Math.max(0, Math.round(parseFloat(prev.breakDurationHours) * 60))
+        : 60;
+      const nextStarts = resolveSessionStartTimes({
+        maxExamsPerDay: count,
+        dailyStartTime: rawVal,
+        breakDurationMinutes: breakMin,
+        sessionDurationsMinutes: durationsMin,
+        sessionStartTimes: [],
+      });
+      return {
+        ...prev,
+        dailyStartTime: rawVal,
+        sessionStartTimes: nextStarts,
+      };
+    });
+  };
+
+  const handleBreakDurationChange = (rawVal) => {
+    const breakHrs = parseFloat(rawVal);
+    setDraftConfig((prev) => {
+      if (!Number.isFinite(breakHrs) || breakHrs < 0) {
+        return { ...prev, breakDurationHours: rawVal };
+      }
+      const count = Math.max(1, Math.min(10, parseInt(prev.maxExamsPerDay, 10) || prev.sessionDurationsHours?.length || 2));
+      const durationsMin = Array.from({ length: count }, (_, i) =>
+        Math.round((parseFloat(prev.sessionDurationsHours?.[i]) || 3) * 60)
+      );
+      const nextStarts = resolveSessionStartTimes({
+        maxExamsPerDay: count,
+        dailyStartTime: prev.sessionStartTimes?.[0] || prev.dailyStartTime || '09:00',
+        breakDurationMinutes: Math.round(breakHrs * 60),
+        sessionDurationsMinutes: durationsMin,
+        sessionStartTimes: [],
+      });
+      return {
+        ...prev,
+        breakDurationHours: rawVal,
+        sessionStartTimes: nextStarts,
+      };
+    });
+  };
+
   const handleMaxExamsPerDayChange = (rawVal) => {
     const parsed = parseInt(rawVal, 10);
     setDraftConfig((prev) => {
@@ -117,10 +179,36 @@ export default function TimetableGeneratorView({
       while (nextDurations.length < parsed) {
         nextDurations.push(fallback);
       }
+      const durationsMin = nextDurations
+        .slice(0, parsed)
+        .map((h) => Math.round((parseFloat(h) || 3) * 60));
+      const breakMin = Number.isFinite(parseFloat(prev.breakDurationHours))
+        ? Math.max(0, Math.round(parseFloat(prev.breakDurationHours) * 60))
+        : 60;
+      const nextStarts = resolveSessionStartTimes({
+        maxExamsPerDay: parsed,
+        dailyStartTime: prev.sessionStartTimes?.[0] || prev.dailyStartTime || '09:00',
+        breakDurationMinutes: breakMin,
+        sessionDurationsMinutes: durationsMin,
+        sessionStartTimes: prev.sessionStartTimes || [],
+      });
       return {
         ...prev,
         maxExamsPerDay: rawVal,
         sessionDurationsHours: nextDurations.slice(0, parsed),
+        sessionStartTimes: nextStarts,
+      };
+    });
+  };
+
+  const handleSessionStartTimeChange = (index, rawVal) => {
+    setDraftConfig((prev) => {
+      const nextStarts = [...(prev.sessionStartTimes || [])];
+      nextStarts[index] = rawVal;
+      return {
+        ...prev,
+        sessionStartTimes: nextStarts,
+        dailyStartTime: index === 0 ? rawVal : prev.dailyStartTime,
       };
     });
   };
@@ -143,12 +231,16 @@ export default function TimetableGeneratorView({
       const hrs = parseFloat(draftConfig.sessionDurationsHours?.[idx]);
       return Number.isFinite(hrs) ? Math.round(hrs * 60) : 0;
     });
+    const sessionStartTimes = Array.from({ length: sessionCount }, (_, idx) => {
+      return draftConfig.sessionStartTimes?.[idx] || '';
+    });
 
     return {
       startDate: draftConfig.startDate,
-      dailyStartTime: draftConfig.dailyStartTime,
+      dailyStartTime: sessionStartTimes[0] || draftConfig.dailyStartTime,
       examDurationMinutes: sessionDurationsMinutes[0] || 0,
       sessionDurationsMinutes,
+      sessionStartTimes,
       breakDurationMinutes: Number.isFinite(breakHrs) ? Math.round(breakHrs * 60) : -1,
       numDays: Number.isFinite(days) ? days : 0,
       maxExamsPerDay: Number.isFinite(maxPerDay) ? maxPerDay : 0,
@@ -169,6 +261,12 @@ export default function TimetableGeneratorView({
     }
     if (parsedConfigPayload.maxExamsPerDay < 1 || parsedConfigPayload.maxExamsPerDay > 10) {
       return 'Max exams per day must be between 1 and 10.';
+    }
+    for (let i = 0; i < parsedConfigPayload.sessionStartTimes.length; i++) {
+      const st = parsedConfigPayload.sessionStartTimes[i];
+      if (!st || !/^\d{2}:\d{2}$/.test(st)) {
+        return `Select a valid start time for Session ${i + 1}.`;
+      }
     }
     for (let i = 0; i < parsedConfigPayload.sessionDurationsMinutes.length; i++) {
       const dur = parsedConfigPayload.sessionDurationsMinutes[i];
@@ -425,9 +523,7 @@ export default function TimetableGeneratorView({
                 type="time"
                 required
                 value={draftConfig.dailyStartTime}
-                onChange={(e) =>
-                  setDraftConfig((prev) => ({ ...prev, dailyStartTime: e.target.value }))
-                }
+                onChange={(e) => handleDailyStartTimeChange(e.target.value)}
                 className="input-editorial w-full text-sm"
               />
             </div>
@@ -447,9 +543,7 @@ export default function TimetableGeneratorView({
                 step="0.25"
                 required
                 value={draftConfig.breakDurationHours}
-                onChange={(e) =>
-                  setDraftConfig((prev) => ({ ...prev, breakDurationHours: e.target.value }))
-                }
+                onChange={(e) => handleBreakDurationChange(e.target.value)}
                 className="input-editorial w-full text-sm font-mono"
               />
               <span className="text-[11px] text-[#7D5563] mt-1 block">
@@ -498,12 +592,12 @@ export default function TimetableGeneratorView({
             </div>
           </div>
 
-          {/* Per-Session Exam Duration Inputs (1..n sessions) */}
+          {/* Per-Session Start Time & Exam Duration Inputs (1..n sessions) */}
           <div className="p-3.5 rounded-2xl bg-white/80 border border-[#C58E9B]/45 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs font-bold text-[#642F43] inline-flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5" aria-hidden="true" />
-                Exam Duration (hours) per Session
+                Session Start Times & Exam Durations
               </span>
               <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#FAF0F3] border border-[#C58E9B]/55 text-[#642F43]">
                 {parsedConfigPayload.sessionDurationsMinutes.length}{' '}
@@ -511,27 +605,63 @@ export default function TimetableGeneratorView({
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {parsedConfigPayload.sessionDurationsMinutes.map((durMin, idx) => (
-                <div key={`session-dur-${idx + 1}`}>
-                  <label
-                    htmlFor={`cfg-session-duration-${idx + 1}`}
-                    className="block text-xs font-bold text-[#642F43] mb-1"
-                  >
-                    Session {idx + 1} Duration (hours)
-                  </label>
-                  <input
-                    id={`cfg-session-duration-${idx + 1}`}
-                    type="number"
-                    min="0.25"
-                    max="12"
-                    step="0.25"
-                    required
-                    value={draftConfig.sessionDurationsHours?.[idx] ?? '3'}
-                    onChange={(e) => handleSessionDurationChange(idx, e.target.value)}
-                    className="input-editorial w-full text-sm font-mono"
-                  />
-                  <span className="text-[11px] text-[#7D5563] mt-1 block">
+                <div
+                  key={`session-card-${idx + 1}`}
+                  className="p-3 rounded-xl bg-[#FAF0F3]/60 border border-[#C58E9B]/40 space-y-2.5"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-1">
+                    <span className="text-xs font-bold text-[#642F43]">
+                      Session {idx + 1}
+                    </span>
+                    <span className="text-[11px] font-medium text-[#7D5563]">
+                      {sessionPreview.isValid && sessionPreview.sessions[idx]
+                        ? `${sessionPreview.sessions[idx].startTime} – ${sessionPreview.sessions[idx].endTime}`
+                        : formatDurationBadge(durMin)}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label
+                        htmlFor={`cfg-session-start-${idx + 1}`}
+                        className="block text-[11px] font-bold text-[#642F43] mb-1"
+                      >
+                        Start Time
+                      </label>
+                      <input
+                        id={`cfg-session-start-${idx + 1}`}
+                        type="time"
+                        required
+                        value={draftConfig.sessionStartTimes?.[idx] ?? (idx === 0 ? '09:00' : '13:00')}
+                        onChange={(e) => handleSessionStartTimeChange(idx, e.target.value)}
+                        className="input-editorial w-full text-xs sm:text-sm font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor={`cfg-session-duration-${idx + 1}`}
+                        className="block text-[11px] font-bold text-[#642F43] mb-1"
+                      >
+                        Duration (hrs)
+                      </label>
+                      <input
+                        id={`cfg-session-duration-${idx + 1}`}
+                        type="number"
+                        min="0.25"
+                        max="12"
+                        step="0.25"
+                        required
+                        value={draftConfig.sessionDurationsHours?.[idx] ?? '3'}
+                        onChange={(e) => handleSessionDurationChange(idx, e.target.value)}
+                        className="input-editorial w-full text-xs sm:text-sm font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <span className="text-[11px] text-[#7D5563] block">
                     {formatDurationBadge(durMin)}
                   </span>
                 </div>

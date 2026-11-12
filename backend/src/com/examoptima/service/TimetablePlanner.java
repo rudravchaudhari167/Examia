@@ -61,6 +61,49 @@ public class TimetablePlanner {
         return resolved;
     }
 
+    public static List<String> resolveSessionStartTimes(
+            List<String> rawStartTimes,
+            String dailyStartTime,
+            List<Integer> durations,
+            int breakDurationMinutes,
+            int maxExamsPerDay
+    ) {
+        int count = Math.max(1, maxExamsPerDay);
+        LocalTime fallbackBase = LocalTime.of(9, 0);
+        if (dailyStartTime != null && !dailyStartTime.trim().isEmpty()) {
+            try {
+                fallbackBase = LocalTime.parse(dailyStartTime.trim());
+            } catch (DateTimeParseException ignored) {
+            }
+        }
+        int safeBreak = Math.max(0, breakDurationMinutes);
+        List<String> resolved = new ArrayList<String>();
+        int cursorMin = fallbackBase.getHour() * 60 + fallbackBase.getMinute();
+
+        for (int i = 0; i < count; i++) {
+            String candidate = (rawStartTimes != null && i < rawStartTimes.size()) ? rawStartTimes.get(i) : null;
+            LocalTime parsed = null;
+            if (candidate != null && !candidate.trim().isEmpty()) {
+                try {
+                    parsed = LocalTime.parse(candidate.trim());
+                } catch (DateTimeParseException ignored) {
+                }
+            }
+            int startMin;
+            if (parsed != null) {
+                startMin = parsed.getHour() * 60 + parsed.getMinute();
+            } else {
+                startMin = Math.min(23 * 60 + 59, Math.max(0, cursorMin));
+            }
+            resolved.add(String.format(Locale.US, "%02d:%02d", startMin / 60, startMin % 60));
+            int dur = (durations != null && i < durations.size() && durations.get(i) != null)
+                    ? durations.get(i).intValue()
+                    : 180;
+            cursorMin = startMin + dur + safeBreak;
+        }
+        return resolved;
+    }
+
     public static void validateConfig(
             String startDate,
             String dailyStartTime,
@@ -69,7 +112,7 @@ public class TimetablePlanner {
             int numDays,
             int maxExamsPerDay
     ) {
-        validateConfig(startDate, dailyStartTime, examDurationMinutes, breakDurationMinutes, numDays, maxExamsPerDay, null);
+        validateConfig(startDate, dailyStartTime, examDurationMinutes, breakDurationMinutes, numDays, maxExamsPerDay, null, null);
     }
 
     public static void validateConfig(
@@ -80,6 +123,19 @@ public class TimetablePlanner {
             int numDays,
             int maxExamsPerDay,
             List<Integer> sessionDurationsMinutes
+    ) {
+        validateConfig(startDate, dailyStartTime, examDurationMinutes, breakDurationMinutes, numDays, maxExamsPerDay, sessionDurationsMinutes, null);
+    }
+
+    public static void validateConfig(
+            String startDate,
+            String dailyStartTime,
+            int examDurationMinutes,
+            int breakDurationMinutes,
+            int numDays,
+            int maxExamsPerDay,
+            List<Integer> sessionDurationsMinutes,
+            List<String> sessionStartTimes
     ) {
         if (startDate == null || startDate.trim().isEmpty()) {
             throw new PlanningException(400, "Examination starting date is required (YYYY-MM-DD).");
@@ -93,15 +149,14 @@ public class TimetablePlanner {
         if (dailyStartTime == null || dailyStartTime.trim().isEmpty()) {
             throw new PlanningException(400, "Daily examination starting time is required (HH:MM).");
         }
-        LocalTime startTime;
         try {
-            startTime = LocalTime.parse(dailyStartTime.trim());
+            LocalTime.parse(dailyStartTime.trim());
         } catch (DateTimeParseException e) {
             throw new PlanningException(400, "Invalid daily start time format. Expected HH:MM (24-hour).");
         }
 
-        if (breakDurationMinutes < 0 || breakDurationMinutes > 360) {
-            throw new PlanningException(400, "Break duration must be between 0 minutes and 6 hours.");
+        if (breakDurationMinutes < 0 || breakDurationMinutes > 480) {
+            throw new PlanningException(400, "Break duration must be between 0 minutes and 8 hours.");
         }
         if (numDays < 1 || numDays > 90) {
             throw new PlanningException(400, "Number of examination days must be between 1 and 90.");
@@ -111,7 +166,6 @@ public class TimetablePlanner {
         }
 
         List<Integer> durations = resolveSessionDurations(sessionDurationsMinutes, examDurationMinutes, maxExamsPerDay);
-        int totalDurationSum = 0;
         for (int i = 0; i < durations.size(); i++) {
             int d = durations.get(i).intValue();
             if (d < 15 || d > 720) {
@@ -120,19 +174,52 @@ public class TimetablePlanner {
                         "Session " + (i + 1) + " exam duration must be between 15 minutes and 12 hours."
                 );
             }
-            totalDurationSum += d;
         }
 
-        int startMinutes = startTime.getHour() * 60 + startTime.getMinute();
-        int lastExamEndMinute = startMinutes
-                + totalDurationSum
-                + ((maxExamsPerDay - 1) * breakDurationMinutes);
-        if (lastExamEndMinute > 24 * 60) {
-            throw new PlanningException(
-                    400,
-                    "Daily exam schedule exceeds midnight (" + maxExamsPerDay + " exams/day with duration and breaks starting at "
-                            + dailyStartTime + "). Reduce exams per day, duration, or start earlier."
-            );
+        if (sessionStartTimes != null && !sessionStartTimes.isEmpty()) {
+            for (int i = 0; i < Math.min(sessionStartTimes.size(), maxExamsPerDay); i++) {
+                String raw = sessionStartTimes.get(i);
+                if (raw == null || raw.trim().isEmpty()) {
+                    throw new PlanningException(400, "Session " + (i + 1) + " start time is required (HH:MM).");
+                }
+                try {
+                    LocalTime.parse(raw.trim());
+                } catch (DateTimeParseException e) {
+                    throw new PlanningException(400, "Invalid Session " + (i + 1) + " start time format. Expected HH:MM.");
+                }
+            }
+        }
+
+        List<String> resolvedStarts = resolveSessionStartTimes(
+                sessionStartTimes,
+                dailyStartTime,
+                durations,
+                breakDurationMinutes,
+                maxExamsPerDay
+        );
+
+        int prevEndMin = -1;
+        for (int i = 0; i < maxExamsPerDay; i++) {
+            LocalTime sTime = LocalTime.parse(resolvedStarts.get(i));
+            int startMin = sTime.getHour() * 60 + sTime.getMinute();
+            int durMin = durations.get(i).intValue();
+            int endMin = startMin + durMin;
+
+            if (i > 0 && startMin < prevEndMin) {
+                LocalTime prevEndTime = LocalTime.of((prevEndMin / 60) % 24, prevEndMin % 60);
+                throw new PlanningException(
+                        400,
+                        "Session " + (i + 1) + " start time (" + TIME_12H.format(sTime)
+                                + ") overlaps Session " + i + " (ends at " + TIME_12H.format(prevEndTime) + ")."
+                );
+            }
+            if (endMin > 24 * 60) {
+                throw new PlanningException(
+                        400,
+                        "Session " + (i + 1) + " schedule extends past midnight. Adjust session start times or durations."
+                );
+            }
+            prevEndMin = endMin;
         }
     }
 
@@ -157,19 +244,20 @@ public class TimetablePlanner {
                 ? JsonHelper.getIntList(config, "sessionDurationsMinutes")
                 : null;
         List<Integer> sessionDurations = resolveSessionDurations(rawDurations, durationMin, maxPerDay);
+        List<String> rawStartTimes = config != null && config.containsKey("sessionStartTimes")
+                ? JsonHelper.getStringList(config, "sessionStartTimes")
+                : null;
+        List<String> resolvedStarts = resolveSessionStartTimes(rawStartTimes, dailyStartStr, sessionDurations, breakMin, maxPerDay);
 
-        validateConfig(startDateStr, dailyStartStr, durationMin, breakMin, numDays, maxPerDay, sessionDurations);
+        validateConfig(startDateStr, dailyStartStr, durationMin, breakMin, numDays, maxPerDay, sessionDurations, resolvedStarts);
 
         LocalDate baseDate = LocalDate.parse(startDateStr.trim());
-        LocalTime baseStart = LocalTime.parse(dailyStartStr.trim());
         LocalTime[] sessionStarts = new LocalTime[maxPerDay];
         LocalTime[] sessionEnds = new LocalTime[maxPerDay];
-        LocalTime cursor = baseStart;
         for (int sIdx = 0; sIdx < maxPerDay; sIdx++) {
-            sessionStarts[sIdx] = cursor;
-            LocalTime sEnd = cursor.plusMinutes(sessionDurations.get(sIdx).longValue());
-            sessionEnds[sIdx] = sEnd;
-            cursor = sEnd.plusMinutes(breakMin);
+            LocalTime sStart = LocalTime.parse(resolvedStarts.get(sIdx));
+            sessionStarts[sIdx] = sStart;
+            sessionEnds[sIdx] = sStart.plusMinutes(sessionDurations.get(sIdx).longValue());
         }
 
         String normalizedAlgo = "backtracking".equalsIgnoreCase(algorithmKey) ? "backtracking" : "greedy";

@@ -20,6 +20,7 @@ const DEFAULT_CONFIG = {
   numDays: 5,
   maxExamsPerDay: 2,
   sessionDurationsMinutes: [180, 180],
+  sessionStartTimes: ['09:00', '13:00'],
 };
 
 export default function App() {
