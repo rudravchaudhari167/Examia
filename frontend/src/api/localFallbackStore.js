@@ -282,10 +282,10 @@ export const localFallbackApi = {
     const name = String(group?.name || '').trim();
     const studentCount = parseInt(group?.studentCount, 10);
     if (!name || Number.isNaN(studentCount) || studentCount <= 0) {
-      throw makeError(400, 'Group name and positive student count are required.');
+      throw makeError(400, 'Division name and positive student count are required.');
     }
     if (db.studentGroups.some((g) => g.name.toLowerCase() === name.toLowerCase())) {
-      throw makeError(400, `Student group "${name}" already exists.`);
+      throw makeError(400, `Division "${name}" already exists.`);
     }
     const created = {
       id: `div-${crypto?.randomUUID ? crypto.randomUUID() : Date.now()}`,
@@ -306,12 +306,12 @@ export const localFallbackApi = {
     const name = String(group?.name || '').trim();
     const studentCount = parseInt(group?.studentCount, 10);
     if (!id || !name || Number.isNaN(studentCount) || studentCount <= 0) {
-      throw makeError(400, 'Group id, name, and positive student count are required.');
+      throw makeError(400, 'Division id, name, and positive student count are required.');
     }
     const idx = db.studentGroups.findIndex((g) => g.id === id);
-    if (idx === -1) throw makeError(400, 'Student group not found.');
+    if (idx === -1) throw makeError(400, 'Division not found.');
     if (db.studentGroups.some((g) => g.id !== id && g.name.toLowerCase() === name.toLowerCase())) {
-      throw makeError(400, `Another student group is already named "${name}".`);
+      throw makeError(400, `Another division is already named "${name}".`);
     }
     db.studentGroups[idx] = {
       ...db.studentGroups[idx],

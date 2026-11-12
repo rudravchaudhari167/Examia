@@ -7,12 +7,9 @@ import {
   CheckCircle2,
   Edit3,
   Info,
-  Layers,
   Plus,
   RotateCcw,
-  Save,
   Search,
-  Share2,
   Trash2,
   Users,
 } from 'lucide-react';
@@ -20,10 +17,46 @@ import Modal from '../components/Modal';
 
 const TABS = [
   { id: 'subjects', label: 'Subjects', icon: BookOpen },
-  { id: 'groups', label: 'Student Groups', icon: Users },
-  { id: 'enrolments', label: 'Subject Enrolments', icon: Layers },
+  { id: 'groups', label: 'Divisions', icon: Users },
   { id: 'classrooms', label: 'Classrooms', icon: Building2 },
 ];
+
+function formatFormError(err, fallback = 'Operation failed.') {
+  if (!err) return fallback;
+  if (typeof err === 'string') {
+    const trimmed = err.trim();
+    return trimmed && trimmed !== '[object Object]' ? trimmed : fallback;
+  }
+  if (err.payload) {
+    if (typeof err.payload === 'string' && err.payload.trim()) return err.payload.trim();
+    if (typeof err.payload.error === 'string' && err.payload.error.trim()) return err.payload.error.trim();
+    if (typeof err.payload.message === 'string' && err.payload.message.trim()) return err.payload.message.trim();
+  }
+  if (typeof err.error === 'string' && err.error.trim()) {
+    return err.error.trim();
+  }
+  if (err.error && typeof err.error === 'object') {
+    if (typeof err.error.message === 'string' && err.error.message.trim()) {
+      return err.error.message.trim();
+    }
+  }
+  if (typeof err.message === 'string' && err.message.trim() && err.message !== '[object Object]') {
+    return err.message.trim();
+  }
+  if (err.message && typeof err.message === 'object') {
+    if (typeof err.message.text === 'string' && err.message.text.trim()) {
+      return err.message.text.trim();
+    }
+    if (typeof err.message.error === 'string' && err.message.error.trim()) {
+      return err.message.error.trim();
+    }
+  }
+  try {
+    const json = JSON.stringify(err);
+    if (json && json !== '{}') return json;
+  } catch {}
+  return fallback;
+}
 
 export default function ManageDataView({
   subjects,
@@ -55,7 +88,6 @@ export default function ManageDataView({
   // Search states
   const [subjectSearch, setSubjectSearch] = useState('');
   const [groupSearch, setGroupSearch] = useState('');
-  const [enrolmentSearch, setEnrolmentSearch] = useState('');
   const [classroomSearch, setClassroomSearch] = useState('');
 
   // Add / Edit Subject Modal state
@@ -66,7 +98,7 @@ export default function ManageDataView({
   const [subjectGroupIdsInput, setSubjectGroupIdsInput] = useState([]);
   const [subjectFormError, setSubjectFormError] = useState('');
 
-  // Add / Edit Student Group Modal state
+  // Add / Edit Division Modal state
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState(null);
   const [groupNameInput, setGroupNameInput] = useState('');
@@ -85,49 +117,6 @@ export default function ManageDataView({
   // Delete / Safe Unassign / Reset confirmation modal state
   const [confirmAction, setConfirmAction] = useState(null);
 
-  // Subject Enrolments state (Tab C: Subject-centric selection)
-  const [selectedSubjectId, setSelectedSubjectId] = useState(subjects[0]?.id || '');
-  const selectedSubject = useMemo(
-    () => subjects.find((s) => s.id === selectedSubjectId) || subjects[0] || null,
-    [subjects, selectedSubjectId]
-  );
-
-  useEffect(() => {
-    if (!subjects.length) {
-      setSelectedSubjectId('');
-      return;
-    }
-    if (!subjects.some((s) => s.id === selectedSubjectId)) {
-      setSelectedSubjectId(subjects[0].id);
-    }
-  }, [subjects, selectedSubjectId]);
-
-  const savedGroupIdsForSubject = useMemo(() => {
-    if (!selectedSubject) return [];
-    return Array.isArray(selectedSubject.groupIds) ? selectedSubject.groupIds : [];
-  }, [selectedSubject]);
-
-  const [draftGroupIds, setDraftGroupIds] = useState(savedGroupIdsForSubject);
-
-  useEffect(() => {
-    setDraftGroupIds(savedGroupIdsForSubject);
-  }, [savedGroupIdsForSubject]);
-
-  const isEnrolmentDirty = useMemo(() => {
-    if (!selectedSubject) return false;
-    if (draftGroupIds.length !== savedGroupIdsForSubject.length) return true;
-    const savedSet = new Set(savedGroupIdsForSubject);
-    return draftGroupIds.some((id) => !savedSet.has(id));
-  }, [selectedSubject, draftGroupIds, savedGroupIdsForSubject]);
-
-  const draftCalculatedStudents = useMemo(() => {
-    const uniqueIds = new Set(draftGroupIds);
-    return studentGroups.reduce(
-      (sum, g) => sum + (uniqueIds.has(g.id) ? Number(g.studentCount) || 0 : 0),
-      0
-    );
-  }, [draftGroupIds, studentGroups]);
-
   // Filtered views
   const filteredSubjects = useMemo(() => {
     const q = subjectSearch.trim().toLowerCase();
@@ -143,12 +132,6 @@ export default function ManageDataView({
     return studentGroups.filter((g) => g.name.toLowerCase().includes(q));
   }, [studentGroups, groupSearch]);
 
-  const filteredEnrolmentGroups = useMemo(() => {
-    const q = enrolmentSearch.trim().toLowerCase();
-    if (!q) return studentGroups;
-    return studentGroups.filter((g) => g.name.toLowerCase().includes(q));
-  }, [studentGroups, enrolmentSearch]);
-
   const filteredClassrooms = useMemo(() => {
     const q = classroomSearch.trim().toLowerCase();
     if (!q) return classrooms;
@@ -158,10 +141,6 @@ export default function ManageDataView({
         (c.building || '').toLowerCase().includes(q)
     );
   }, [classrooms, classroomSearch]);
-
-  const sharedSubjects = useMemo(() => {
-    return subjects.filter((s) => Array.isArray(s.divisions) && s.divisions.length >= 2);
-  }, [subjects]);
 
   // Tab keyboard navigation
   const handleTabKeyDown = (event, index) => {
@@ -234,13 +213,13 @@ export default function ManageDataView({
       }
       setIsSubjectModalOpen(false);
     } catch (err) {
-      setSubjectFormError(err.message || 'Could not save subject.');
+      setSubjectFormError(formatFormError(err, 'Could not save subject.'));
     } finally {
       setIsBusy(false);
     }
   };
 
-  // --- Student Group Handlers ---
+  // --- Division Handlers ---
   const openAddGroupModal = () => {
     setEditingGroup(null);
     setGroupNameInput('');
@@ -262,7 +241,7 @@ export default function ManageDataView({
     const cleanName = groupNameInput.trim();
     const parsedCount = parseInt(groupCountInput, 10);
     if (!cleanName) {
-      setGroupFormError('Please enter a student group name (e.g., Division D).');
+      setGroupFormError('Please enter a division name (e.g., Division D or Section 2).');
       return;
     }
     if (Number.isNaN(parsedCount) || parsedCount <= 0) {
@@ -281,17 +260,17 @@ export default function ManageDataView({
           department: editingGroup.department || '',
           semester: editingGroup.semester || '',
         });
-        showFeedback('success', `Updated student group "${cleanName}" (${parsedCount} students).`);
+        showFeedback('success', `Updated division "${cleanName}" (${parsedCount} students).`);
       } else {
         await onAddGroup({
           name: cleanName,
           studentCount: parsedCount,
         });
-        showFeedback('success', `Added student group "${cleanName}" (${parsedCount} students).`);
+        showFeedback('success', `Added division "${cleanName}" (${parsedCount} students).`);
       }
       setIsGroupModalOpen(false);
     } catch (err) {
-      setGroupFormError(err.message || 'Could not save student group.');
+      setGroupFormError(formatFormError(err, 'Could not save division.'));
     } finally {
       setIsBusy(false);
     }
@@ -356,38 +335,7 @@ export default function ManageDataView({
       }
       setIsClassroomModalOpen(false);
     } catch (err) {
-      setRoomFormError(err.message || 'Could not save classroom.');
-    } finally {
-      setIsBusy(false);
-    }
-  };
-
-  // --- Enrolment Handlers ---
-  const toggleDraftGroup = (groupId) => {
-    setDraftGroupIds((prev) =>
-      prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId]
-    );
-  };
-
-  const handleSaveEnrolments = async () => {
-    if (!selectedSubject) {
-      showFeedback('error', 'Select or add a subject before saving enrolments.');
-      return;
-    }
-    setIsBusy(true);
-    try {
-      await onUpdateEnrolments({
-        subjectId: selectedSubject.id,
-        groupIds: draftGroupIds,
-      });
-      showFeedback(
-        'success',
-        `Updated enrolments for ${selectedSubject.code}: ${draftGroupIds.length} ${
-          draftGroupIds.length === 1 ? 'group' : 'groups'
-        } (${draftCalculatedStudents} students by group total).`
-      );
-    } catch (err) {
-      showFeedback('error', err.message || 'Failed to update enrolments.');
+      setRoomFormError(formatFormError(err, 'Could not save classroom.'));
     } finally {
       setIsBusy(false);
     }
@@ -404,7 +352,7 @@ export default function ManageDataView({
         setConfirmAction(null);
       } else if (confirmAction.type === 'group') {
         await onDeleteGroup(confirmAction.item.id);
-        showFeedback('success', `Deleted student group "${confirmAction.item.name}".`);
+        showFeedback('success', `Deleted division "${confirmAction.item.name}".`);
         setConfirmAction(null);
       } else if (confirmAction.type === 'classroom') {
         await onDeleteClassroom(confirmAction.item.id, Boolean(confirmAction.clearSchedule));
@@ -417,7 +365,7 @@ export default function ManageDataView({
         setConfirmAction(null);
       } else if (confirmAction.type === 'reset') {
         await onResetSampleData();
-        showFeedback('success', 'Restored default sample subjects, groups, classrooms, and enrolments.');
+        showFeedback('success', 'Restored default sample subjects, divisions, and classrooms.');
         setConfirmAction(null);
       }
     } catch (err) {
@@ -428,11 +376,11 @@ export default function ManageDataView({
           item: confirmAction.item,
           clearSchedule: true,
           title: `Classroom "${confirmAction.item.name}" Is In Use`,
-          description: err.message,
+          description: formatFormError(err, 'Classroom is currently assigned to active examinations.'),
           confirmLabel: 'Clear Timetable & Delete Room',
         });
       } else {
-        showFeedback('error', err.message || 'Operation could not be completed.');
+        showFeedback('error', formatFormError(err, 'Operation could not be completed.'));
         setConfirmAction(null);
       }
     } finally {
@@ -474,7 +422,7 @@ export default function ManageDataView({
             Manage Exam Data
           </h1>
           <p className="text-xs sm:text-sm text-[#6F4253] mt-0.5">
-            Maintain subjects, student groups, enrolments, and examination classrooms in one workspace.
+            Maintain subjects, divisions, and examination classrooms in one workspace.
           </p>
         </div>
 
@@ -485,7 +433,7 @@ export default function ManageDataView({
               type: 'reset',
               title: 'Restore Sample Dataset?',
               description:
-                'This resets subjects, student groups, classrooms, and configuration in the database back to the sample dataset.',
+                'This resets subjects, divisions, classrooms, and configuration in the database back to the sample dataset.',
               confirmLabel: 'Restore Sample Data',
             })
           }
@@ -538,9 +486,7 @@ export default function ManageDataView({
               ? subjects.length
               : tab.id === 'groups'
                 ? studentGroups.length
-                : tab.id === 'classrooms'
-                  ? classrooms.length
-                  : sharedSubjects.length;
+                : classrooms.length;
 
           return (
             <button
@@ -578,7 +524,7 @@ export default function ManageDataView({
                   Subjects ({subjects.length})
                 </h2>
                 <p className="text-xs text-[#6F4253]">
-                  Manage examination subjects with their codes, names, and enrolled group totals.
+                  Manage examination subjects with their codes, names, and assigned division totals.
                 </p>
               </div>
               <button
@@ -639,8 +585,8 @@ export default function ManageDataView({
                       <tr className="bg-[#F4E4E9] text-[#642F43] text-xs uppercase tracking-wider border-b border-[#C58E9B]/40">
                         <th className="py-3 px-4 font-bold">Subject Code</th>
                         <th className="py-3 px-4 font-bold">Subject Name</th>
-                        <th className="py-3 px-4 font-bold">Assigned Groups</th>
-                        <th className="py-3 px-4 font-bold">Enrolled Students</th>
+                        <th className="py-3 px-4 font-bold">Assigned Divisions</th>
+                        <th className="py-3 px-4 font-bold">Total Students</th>
                         <th className="py-3 px-4 font-bold text-right">Actions</th>
                       </tr>
                     </thead>
@@ -735,7 +681,7 @@ export default function ManageDataView({
                             </span>
                           ))
                         ) : (
-                          <span className="text-xs text-[#7D5563]">No student groups assigned</span>
+                          <span className="text-xs text-[#7D5563]">No divisions assigned</span>
                         )}
                       </div>
 
@@ -774,17 +720,17 @@ export default function ManageDataView({
         </div>
       )}
 
-      {/* B. STUDENT GROUPS */}
+      {/* B. DIVISIONS */}
       {activeTab === 'groups' && (
         <div role="tabpanel" id={getPanelId('groups')} aria-labelledby={getTabId('groups')}>
           <section className="card-premium p-4 sm:p-6 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h2 className="text-base sm:text-lg font-serif font-bold text-[#642F43]">
-                  Student Groups ({studentGroups.length})
+                  Divisions ({studentGroups.length})
                 </h2>
                 <p className="text-xs text-[#6F4253]">
-                  Manage student cohorts and actual student counts per group.
+                  Manage academic divisions or sections and actual student counts per division.
                 </p>
               </div>
               <button
@@ -793,7 +739,7 @@ export default function ManageDataView({
                 className="btn-primary text-xs sm:text-sm min-h-[44px] px-4 py-2.5 flex items-center justify-center gap-2"
               >
                 <Plus className="w-4 h-4" aria-hidden="true" />
-                <span>Add Student Group</span>
+                <span>Add Division</span>
               </button>
             </div>
 
@@ -804,10 +750,10 @@ export default function ManageDataView({
               />
               <input
                 type="search"
-                aria-label="Search student groups by name"
+                aria-label="Search divisions by name"
                 value={groupSearch}
                 onChange={(e) => setGroupSearch(e.target.value)}
-                placeholder="Search student groups..."
+                placeholder="Search divisions..."
                 className="input-editorial pl-10 w-full text-sm"
               />
             </div>
@@ -817,8 +763,8 @@ export default function ManageDataView({
                 <Users className="w-8 h-8 text-[#C58E9B] mx-auto" aria-hidden="true" />
                 <p className="text-sm font-semibold text-[#4A1F30]">
                   {studentGroups.length === 0
-                    ? 'No student groups added yet'
-                    : 'No matching student groups'}
+                    ? 'No divisions added yet'
+                    : 'No matching divisions'}
                 </p>
                 {studentGroups.length === 0 ? (
                   <button
@@ -827,7 +773,7 @@ export default function ManageDataView({
                     className="btn-primary text-xs min-h-[40px] px-4 py-2 inline-flex items-center gap-1.5"
                   >
                     <Plus className="w-3.5 h-3.5" aria-hidden="true" />
-                    <span>Add First Student Group</span>
+                    <span>Add First Division</span>
                   </button>
                 ) : (
                   <button
@@ -845,9 +791,9 @@ export default function ManageDataView({
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-[#F4E4E9] text-[#642F43] text-xs uppercase tracking-wider border-b border-[#C58E9B]/40">
-                        <th className="py-3 px-4 font-bold">Group Name</th>
+                        <th className="py-3 px-4 font-bold">Division Name</th>
                         <th className="py-3 px-4 font-bold">Student Count</th>
-                        <th className="py-3 px-4 font-bold">Enrolled Subjects</th>
+                        <th className="py-3 px-4 font-bold">Assigned Subjects</th>
                         <th className="py-3 px-4 font-bold text-right">Actions</th>
                       </tr>
                     </thead>
@@ -886,9 +832,9 @@ export default function ManageDataView({
                                     setConfirmAction({
                                       type: 'group',
                                       item: group,
-                                      title: `Delete Student Group "${group.name}"?`,
-                                      description: `Removing "${group.name}" will unenroll this group from all subjects.`,
-                                      confirmLabel: 'Delete Group',
+                                      title: `Delete Division "${group.name}"?`,
+                                      description: `Removing "${group.name}" will unassign this division from all subjects.`,
+                                      confirmLabel: 'Delete Division',
                                     })
                                   }
                                   aria-label={`Delete ${group.name}`}
@@ -943,9 +889,9 @@ export default function ManageDataView({
                               setConfirmAction({
                                 type: 'group',
                                 item: group,
-                                title: `Delete Student Group "${group.name}"?`,
-                                description: `Removing "${group.name}" will unenroll this group from all subjects.`,
-                                confirmLabel: 'Delete Group',
+                                title: `Delete Division "${group.name}"?`,
+                                description: `Removing "${group.name}" will unassign this division from all subjects.`,
+                                confirmLabel: 'Delete Division',
                               })
                             }
                             className="flex-1 min-h-[44px] rounded-xl border border-[#C58E9B]/50 bg-[#F8EAEF] text-xs font-semibold text-[#4A1F30] inline-flex items-center justify-center gap-1.5"
@@ -964,246 +910,7 @@ export default function ManageDataView({
         </div>
       )}
 
-      {/* C. SUBJECT ENROLMENT MANAGEMENT */}
-      {activeTab === 'enrolments' && (
-        <div role="tabpanel" id={getPanelId('enrolments')} aria-labelledby={getTabId('enrolments')}>
-          <div className="space-y-5">
-            <section className="card-premium p-4 sm:p-6 space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-base sm:text-lg font-serif font-bold text-[#642F43]">
-                    Subject Enrolments
-                  </h2>
-                  <p className="text-xs text-[#6F4253]">
-                    Assign or remove student groups for each subject and inspect total enrolled student counts.
-                  </p>
-                </div>
-
-                {selectedSubject && (
-                  <button
-                    type="button"
-                    disabled={isBusy}
-                    onClick={handleSaveEnrolments}
-                    className="btn-primary text-xs sm:text-sm min-h-[44px] px-4 py-2.5 flex items-center justify-center gap-2 shrink-0"
-                  >
-                    <Save className="w-4 h-4" aria-hidden="true" />
-                    <span>{isEnrolmentDirty ? 'Save Enrolments' : 'Enrolments Saved'}</span>
-                  </button>
-                )}
-              </div>
-
-              {/* Truthful Group-Level Count Allocation Notice */}
-              <div className="p-3.5 rounded-2xl bg-[#FAF0F3] border border-[#C58E9B]/45 flex items-start gap-2.5 text-xs text-[#4A1F30]">
-                <Info className="w-4 h-4 text-[#642F43] shrink-0 mt-0.5" aria-hidden="true" />
-                <p>
-                  <strong>Group-level count allocation:</strong> Each subject sums the student counts of its distinct assigned student groups (a group can never be counted twice for the same subject). Individual student rosters are not stored in this model.
-                </p>
-              </div>
-
-              {subjects.length === 0 || studentGroups.length === 0 ? (
-                <div className="p-6 rounded-2xl bg-[#FAF0F3]/80 border border-[#C58E9B]/35 text-center space-y-2">
-                  <p className="text-sm font-semibold text-[#4A1F30]">
-                    {subjects.length === 0 ? 'Add subjects first' : 'Add student groups first'}
-                  </p>
-                  <p className="text-xs text-[#6F4253]">
-                    You need at least one subject and one student group to manage enrolments.
-                  </p>
-                </div>
-              ) : (
-                <>
-                  {/* 1. Subject Selector */}
-                  <div className="p-4 rounded-2xl bg-[#FAF0F3]/85 border border-[#C58E9B]/40 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-                    <div className="space-y-1.5 flex-1">
-                      <label
-                        htmlFor="examia-enrolment-subject-select"
-                        className="text-xs font-bold uppercase tracking-wider text-[#642F43] block"
-                      >
-                        1. Select Subject to Manage Enrolments
-                      </label>
-                      <select
-                        id="examia-enrolment-subject-select"
-                        value={selectedSubject?.id || ''}
-                        onChange={(e) => setSelectedSubjectId(e.target.value)}
-                        className="input-editorial w-full sm:max-w-md text-sm font-semibold"
-                      >
-                        {subjects.map((subj) => (
-                          <option key={subj.id} value={subj.id}>
-                            {subj.code} — {subj.name} ({subj.studentCount} students)
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="px-4 py-2.5 rounded-xl bg-white border border-[#C58E9B]/45 shrink-0">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6F4253] block">
-                        Calculated Enrolled Total
-                      </span>
-                      <span className="text-lg font-serif font-bold text-[#642F43]">
-                        {draftCalculatedStudents} students ({draftGroupIds.length}{' '}
-                        {draftGroupIds.length === 1 ? 'group' : 'groups'})
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* 2. Student Groups Checkboxes */}
-                  <div className="space-y-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <p className="text-xs font-bold uppercase tracking-wider text-[#642F43]">
-                        2. Assign Student Groups to {selectedSubject?.code}
-                        {isEnrolmentDirty && ' (unsaved changes)'}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setDraftGroupIds(studentGroups.map((g) => g.id))}
-                          className="text-xs font-semibold text-[#642F43] hover:underline px-2 py-1"
-                        >
-                          Select All
-                        </button>
-                        <span aria-hidden="true" className="text-[#C58E9B]">|</span>
-                        <button
-                          type="button"
-                          onClick={() => setDraftGroupIds([])}
-                          className="text-xs font-semibold text-[#642F43] hover:underline px-2 py-1"
-                        >
-                          Clear All
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="relative">
-                      <Search
-                        className="w-4 h-4 text-[#7D5563] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
-                        aria-hidden="true"
-                      />
-                      <input
-                        type="search"
-                        aria-label="Filter student groups"
-                        value={enrolmentSearch}
-                        onChange={(e) => setEnrolmentSearch(e.target.value)}
-                        placeholder="Filter student groups by name..."
-                        className="input-editorial pl-10 w-full text-sm"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                      {filteredEnrolmentGroups.map((group) => {
-                        const isChecked = draftGroupIds.includes(group.id);
-                        return (
-                          <label
-                            key={group.id}
-                            className={`p-3.5 rounded-2xl border cursor-pointer flex items-start gap-3 transition-colors min-h-[56px] ${
-                              isChecked
-                                ? 'bg-[#FDF9FA] border-[#642F43] shadow-xs'
-                                : 'bg-[#FAF0F3]/60 border-[#C58E9B]/40 hover:bg-[#FAF0F3]'
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => toggleDraftGroup(group.id)}
-                              className="sr-only"
-                            />
-                            <span
-                              aria-hidden="true"
-                              className={`mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${
-                                isChecked
-                                  ? 'bg-[#642F43] border-[#642F43] text-white'
-                                  : 'bg-white border-[#C58E9B]'
-                              }`}
-                            >
-                              {isChecked && <Check className="w-3.5 h-3.5" />}
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-bold text-[#361522]">{group.name}</p>
-                              <p className="text-xs font-mono text-[#642F43] font-semibold">
-                                {group.studentCount} students
-                              </p>
-                            </div>
-                          </label>
-                        );
-                      })}
-                    </div>
-
-                    <div className="pt-2 flex justify-end">
-                      <button
-                        type="button"
-                        disabled={isBusy}
-                        onClick={handleSaveEnrolments}
-                        className="btn-primary text-xs sm:text-sm min-h-[44px] px-5 py-2.5 flex items-center gap-2"
-                      >
-                        <Save className="w-4 h-4" aria-hidden="true" />
-                        <span>Save Enrolments</span>
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </section>
-
-            {/* Enrolment Summary & Shared Conflict Subjects */}
-            <section className="card-premium p-4 sm:p-6 space-y-3">
-              <div className="flex items-start gap-2.5">
-                <Share2 className="w-4 h-4 text-[#642F43] mt-1 shrink-0" aria-hidden="true" />
-                <div>
-                  <h3 className="text-sm sm:text-base font-serif font-bold text-[#642F43]">
-                    Subject Enrolment Totals &amp; Shared Group Overlaps ({sharedSubjects.length} shared)
-                  </h3>
-                  <p className="text-xs text-[#6F4253]">
-                    Any two subjects sharing one or more student groups cannot run in the same examination slot.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                {subjects.map((subj) => {
-                  const isShared = (subj.divisions || []).length >= 2;
-                  return (
-                    <div
-                      key={subj.id}
-                      className="p-3.5 rounded-2xl bg-[#FAF0F3]/85 border border-[#C58E9B]/40 space-y-2"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-mono text-xs font-bold text-[#642F43]">
-                          {subj.code}
-                        </span>
-                        <span
-                          className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
-                            isShared
-                              ? 'bg-[#642F43] text-[#FDF8FA]'
-                              : 'bg-white text-[#642F43] border border-[#C58E9B]/40'
-                          }`}
-                        >
-                          {subj.studentCount} students
-                        </span>
-                      </div>
-                      <p className="text-xs font-semibold text-[#361522] leading-snug">
-                        {subj.name}
-                      </p>
-                      <div className="flex flex-wrap gap-1">
-                        {subj.divisions?.length > 0 ? (
-                          subj.divisions.map((gName) => (
-                            <span
-                              key={gName}
-                              className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-white text-[#642F43] border border-[#C58E9B]/40"
-                            >
-                              {gName}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-[11px] text-[#7D5563]">No groups assigned</span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          </div>
-        </div>
-      )}
-
-      {/* D. CLASSROOM MANAGEMENT */}
+      {/* C. CLASSROOM MANAGEMENT */}
       {activeTab === 'classrooms' && (
         <div role="tabpanel" id={getPanelId('classrooms')} aria-labelledby={getTabId('classrooms')}>
           <section className="card-premium p-4 sm:p-6 space-y-4">
@@ -1397,7 +1104,7 @@ export default function ManageDataView({
         isOpen={isSubjectModalOpen}
         onClose={() => setIsSubjectModalOpen(false)}
         title={editingSubject ? 'Edit Subject' : 'Add Subject'}
-        subtitle="Enter the subject code, name, and enrolled student groups."
+        subtitle="Enter the subject code, name, and assigned divisions."
       >
         <form onSubmit={handleSaveSubject} className="space-y-4">
           {subjectFormError && (
@@ -1448,7 +1155,7 @@ export default function ManageDataView({
           {studentGroups.length > 0 && (
             <div className="space-y-1.5">
               <span className="block text-xs font-bold uppercase tracking-wider text-[#642F43]">
-                Enrolled Student Groups
+                Assigned Divisions
               </span>
               <div className="flex flex-wrap gap-2">
                 {studentGroups.map((group) => {
@@ -1498,12 +1205,12 @@ export default function ManageDataView({
         </form>
       </Modal>
 
-      {/* Add / Edit Student Group Modal */}
+      {/* Add / Edit Division Modal */}
       <Modal
         isOpen={isGroupModalOpen}
         onClose={() => setIsGroupModalOpen(false)}
-        title={editingGroup ? 'Edit Student Group' : 'Add Student Group'}
-        subtitle="Specify the group name and actual student count."
+        title={editingGroup ? 'Edit Division' : 'Add Division'}
+        subtitle="Specify the division name (e.g. Division A, Section 1) and student count."
       >
         <form onSubmit={handleSaveGroup} className="space-y-4">
           {groupFormError && (
@@ -1520,7 +1227,7 @@ export default function ManageDataView({
               htmlFor="examia-group-name-input"
               className="block text-xs font-bold uppercase tracking-wider text-[#642F43]"
             >
-              Group Name *
+              Division / Section Name *
             </label>
             <input
               id="examia-group-name-input"
@@ -1565,7 +1272,7 @@ export default function ManageDataView({
               disabled={isBusy}
               className="btn-primary min-h-[44px] px-5 py-2 text-xs font-semibold"
             >
-              {editingGroup ? 'Save Changes' : 'Add Student Group'}
+              {editingGroup ? 'Save Changes' : 'Add Division'}
             </button>
           </div>
         </form>

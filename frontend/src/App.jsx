@@ -148,19 +148,19 @@ export default function App() {
   const handleAddGroup = async (payload) => {
     const created = await api.createStudentGroup(payload);
     await refreshFromBackend();
-    showToast(`Student group "${created.name}" added.`);
+    showToast(`Division "${created.name}" added.`);
   };
 
   const handleEditGroup = async (payload) => {
     const updated = await api.updateStudentGroup(payload);
     await refreshFromBackend();
-    showToast(`Student group "${updated.name}" updated.`);
+    showToast(`Division "${updated.name}" updated.`);
   };
 
   const handleDeleteGroup = async (id) => {
     const data = await api.deleteStudentGroup(id);
     applyBootstrapState(data);
-    showToast('Student group deleted.');
+    showToast('Division deleted.');
   };
 
   const handleUpdateEnrolments = async ({ subjectId, groupIds, groupId, subjectIds }) => {

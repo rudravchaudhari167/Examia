@@ -295,7 +295,7 @@ export default function Topbar({
                     <div className="p-2.5 rounded-xl clay-inset">
                       <p className="font-semibold text-[#361522]">Conflict Detection Active</p>
                       <p className="text-[11px] text-[#6F4253] mt-0.5">
-                        Conflicts automatically recalculate whenever subject enrolments or student groups change.
+                        Conflicts automatically recalculate whenever subjects or divisions change.
                       </p>
                     </div>
                   </div>

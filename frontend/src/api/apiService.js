@@ -11,17 +11,31 @@ const API_BASE = '/api';
 
 function extractErrorMessage(data, status) {
   if (!data) return `Request failed with status ${status}`;
-  if (typeof data === 'string') return data;
-  if (typeof data.error === 'string' && data.error.trim()) return data.error;
+  if (typeof data === 'string') {
+    const trimmed = data.trim();
+    return trimmed && trimmed !== '[object Object]' ? trimmed : `Request failed with status ${status}`;
+  }
+  if (typeof data.error === 'string' && data.error.trim()) return data.error.trim();
   if (data.error && typeof data.error === 'object') {
     if (typeof data.error.message === 'string' && data.error.message.trim()) {
-      return data.error.message;
+      return data.error.message.trim();
+    }
+    if (typeof data.error.error === 'string' && data.error.error.trim()) {
+      return data.error.error.trim();
     }
     if (typeof data.error.code === 'string') {
       return `Error ${data.error.code}`;
     }
   }
-  if (typeof data.message === 'string' && data.message.trim()) return data.message;
+  if (typeof data.message === 'string' && data.message.trim()) return data.message.trim();
+  if (data.message && typeof data.message === 'object') {
+    if (typeof data.message.text === 'string' && data.message.text.trim()) {
+      return data.message.text.trim();
+    }
+    if (typeof data.message.error === 'string' && data.message.error.trim()) {
+      return data.message.error.trim();
+    }
+  }
   return `Request failed with status ${status}`;
 }
 

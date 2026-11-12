@@ -21,7 +21,7 @@ function getGreetingForDate(date = new Date()) {
 const STEPS = [
   {
     number: '1',
-    title: 'Add subjects, student groups, enrolments, and classrooms.',
+    title: 'Add subjects, divisions, and classrooms.',
   },
   {
     number: '2',
@@ -135,9 +135,9 @@ export default function DashboardView({
           />
 
           <StatCard
-            title="Total Student Groups"
+            title="Total Divisions"
             value={studentGroups.length}
-            subtitle={`${totalStudentsInGroups} total students across groups`}
+            subtitle={`${totalStudentsInGroups} total students across divisions`}
             icon={Users}
             accentColor="sage"
           />
@@ -171,7 +171,7 @@ export default function DashboardView({
             onClick={() => setActiveTab('manage')}
             className="text-xs font-semibold text-[#642F43] hover:text-[#4A1F30] underline underline-offset-4 self-start sm:self-auto"
           >
-            Manage subjects, groups &amp; classrooms
+            Manage subjects, divisions &amp; classrooms
           </button>
         </div>
 

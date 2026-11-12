@@ -962,7 +962,7 @@ export default function TimetableGeneratorView({
               No examination timetable generated yet.
             </p>
             <p className="text-xs text-[#6F4253] max-w-md mx-auto">
-              Verify your subjects, student groups, enrolments, and classrooms in{' '}
+              Verify your subjects, divisions, and classrooms in{' '}
               <button
                 type="button"
                 onClick={onNavigateToManage}
@@ -1019,8 +1019,8 @@ export default function TimetableGeneratorView({
 
             {/* Honest allocation-basis notice */}
             <p className="text-xs text-[#6F4253] bg-[#FAF0F3]/80 border border-[#C58E9B]/35 rounded-xl px-3.5 py-2.5">
-              <strong className="text-[#642F43]">Group-level count allocation:</strong>{' '}
-              Student totals are calculated by summing distinct enrolled student groups per subject. Expand any row to inspect exact classroom capacity breakdown and remaining seats.
+              <strong className="text-[#642F43]">Division-level count allocation:</strong>{' '}
+              Student totals are calculated by summing distinct assigned divisions per subject. Expand any row to inspect exact classroom capacity breakdown and remaining seats.
             </p>
 
             {/* Desktop Schedule Table */}
@@ -1295,8 +1295,8 @@ export default function TimetableGeneratorView({
                 Each vertex represents a scheduled examination subject.
               </li>
               <li className="p-3 rounded-xl bg-[#FAF0F3]/80 border border-[#C58E9B]/30">
-                <strong className="text-[#361522] block mb-0.5">Edges (Shared Groups)</strong>
-                Edges connect subjects sharing any enrolled student group.
+                <strong className="text-[#361522] block mb-0.5">Edges (Shared Divisions)</strong>
+                Edges connect subjects sharing any enrolled division.
               </li>
               <li className="p-3 rounded-xl bg-[#FAF0F3]/80 border border-[#C58E9B]/30">
                 <strong className="text-[#361522] block mb-0.5">Colors (Exam Slots)</strong>
