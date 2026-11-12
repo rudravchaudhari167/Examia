@@ -184,6 +184,25 @@ public class JsonHelper {
         return result;
     }
 
+    @SuppressWarnings("unchecked")
+    public static List<Integer> getIntList(Map<String, Object> map, String key) {
+        List<Integer> result = new ArrayList<Integer>();
+        if (map == null || !map.containsKey(key) || !(map.get(key) instanceof List)) {
+            return result;
+        }
+        for (Object item : (List<Object>) map.get(key)) {
+            if (item instanceof Number) {
+                result.add(Integer.valueOf(((Number) item).intValue()));
+            } else if (item != null) {
+                try {
+                    result.add(Integer.valueOf((int) Math.round(Double.parseDouble(String.valueOf(item)))));
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+        return result;
+    }
+
     public static int extractIntField(String json, String fieldName, int defaultValue) {
         Map<String, Object> obj = parseObject(json);
         return getInt(obj, fieldName, defaultValue);

@@ -19,6 +19,7 @@ const DEFAULT_CONFIG = {
   breakDurationMinutes: 60,
   numDays: 5,
   maxExamsPerDay: 2,
+  sessionDurationsMinutes: [180, 180],
 };
 
 export default function App() {

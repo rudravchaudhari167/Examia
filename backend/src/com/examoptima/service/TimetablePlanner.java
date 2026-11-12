@@ -44,6 +44,23 @@ public class TimetablePlanner {
         }
     }
 
+    public static List<Integer> resolveSessionDurations(
+            List<Integer> rawDurations,
+            int fallbackDurationMinutes,
+            int maxExamsPerDay
+    ) {
+        int count = Math.max(1, maxExamsPerDay);
+        int fallback = fallbackDurationMinutes;
+        List<Integer> resolved = new ArrayList<Integer>();
+        for (int i = 0; i < count; i++) {
+            int val = (rawDurations != null && i < rawDurations.size() && rawDurations.get(i) != null)
+                    ? rawDurations.get(i).intValue()
+                    : fallback;
+            resolved.add(Integer.valueOf(val));
+        }
+        return resolved;
+    }
+
     public static void validateConfig(
             String startDate,
             String dailyStartTime,
@@ -51,6 +68,18 @@ public class TimetablePlanner {
             int breakDurationMinutes,
             int numDays,
             int maxExamsPerDay
+    ) {
+        validateConfig(startDate, dailyStartTime, examDurationMinutes, breakDurationMinutes, numDays, maxExamsPerDay, null);
+    }
+
+    public static void validateConfig(
+            String startDate,
+            String dailyStartTime,
+            int examDurationMinutes,
+            int breakDurationMinutes,
+            int numDays,
+            int maxExamsPerDay,
+            List<Integer> sessionDurationsMinutes
     ) {
         if (startDate == null || startDate.trim().isEmpty()) {
             throw new PlanningException(400, "Examination starting date is required (YYYY-MM-DD).");
@@ -71,9 +100,6 @@ public class TimetablePlanner {
             throw new PlanningException(400, "Invalid daily start time format. Expected HH:MM (24-hour).");
         }
 
-        if (examDurationMinutes < 15 || examDurationMinutes > 720) {
-            throw new PlanningException(400, "Examination duration must be between 15 minutes and 12 hours.");
-        }
         if (breakDurationMinutes < 0 || breakDurationMinutes > 360) {
             throw new PlanningException(400, "Break duration must be between 0 minutes and 6 hours.");
         }
@@ -84,9 +110,22 @@ public class TimetablePlanner {
             throw new PlanningException(400, "Maximum examinations per day must be between 1 and 12.");
         }
 
+        List<Integer> durations = resolveSessionDurations(sessionDurationsMinutes, examDurationMinutes, maxExamsPerDay);
+        int totalDurationSum = 0;
+        for (int i = 0; i < durations.size(); i++) {
+            int d = durations.get(i).intValue();
+            if (d < 15 || d > 720) {
+                throw new PlanningException(
+                        400,
+                        "Session " + (i + 1) + " exam duration must be between 15 minutes and 12 hours."
+                );
+            }
+            totalDurationSum += d;
+        }
+
         int startMinutes = startTime.getHour() * 60 + startTime.getMinute();
         int lastExamEndMinute = startMinutes
-                + (maxExamsPerDay * examDurationMinutes)
+                + totalDurationSum
                 + ((maxExamsPerDay - 1) * breakDurationMinutes);
         if (lastExamEndMinute > 24 * 60) {
             throw new PlanningException(
@@ -114,11 +153,24 @@ public class TimetablePlanner {
         int breakMin = JsonHelper.getInt(config, "breakDurationMinutes", 60);
         int numDays = JsonHelper.getInt(config, "numDays", 5);
         int maxPerDay = JsonHelper.getInt(config, "maxExamsPerDay", 2);
+        List<Integer> rawDurations = config != null && config.containsKey("sessionDurationsMinutes")
+                ? JsonHelper.getIntList(config, "sessionDurationsMinutes")
+                : null;
+        List<Integer> sessionDurations = resolveSessionDurations(rawDurations, durationMin, maxPerDay);
 
-        validateConfig(startDateStr, dailyStartStr, durationMin, breakMin, numDays, maxPerDay);
+        validateConfig(startDateStr, dailyStartStr, durationMin, breakMin, numDays, maxPerDay, sessionDurations);
 
         LocalDate baseDate = LocalDate.parse(startDateStr.trim());
         LocalTime baseStart = LocalTime.parse(dailyStartStr.trim());
+        LocalTime[] sessionStarts = new LocalTime[maxPerDay];
+        LocalTime[] sessionEnds = new LocalTime[maxPerDay];
+        LocalTime cursor = baseStart;
+        for (int sIdx = 0; sIdx < maxPerDay; sIdx++) {
+            sessionStarts[sIdx] = cursor;
+            LocalTime sEnd = cursor.plusMinutes(sessionDurations.get(sIdx).longValue());
+            sessionEnds[sIdx] = sEnd;
+            cursor = sEnd.plusMinutes(breakMin);
+        }
 
         String normalizedAlgo = "backtracking".equalsIgnoreCase(algorithmKey) ? "backtracking" : "greedy";
         if ("backtracking".equals(normalizedAlgo) && maxSlots < 0) {
@@ -199,8 +251,8 @@ public class TimetablePlanner {
             int sessionOffset = slotIndex % maxPerDay;
 
             LocalDate examDate = baseDate.plusDays(dayOffset);
-            LocalTime slotStart = baseStart.plusMinutes((long) sessionOffset * (durationMin + breakMin));
-            LocalTime slotEnd = slotStart.plusMinutes(durationMin);
+            LocalTime slotStart = sessionStarts[sessionOffset];
+            LocalTime slotEnd = sessionEnds[sessionOffset];
 
             String examDateStr = examDate.toString();
             String startTimeStr = slotStart.format(TIME_12H);

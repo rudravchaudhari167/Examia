@@ -22,34 +22,65 @@ export function parseTimeToMinutes(timeStr) {
   return h * 60 + m;
 }
 
+export function resolveSessionDurationsMinutes(config) {
+  const maxPerDay = Number(config?.maxExamsPerDay) || 0;
+  const fallback = Number(config?.examDurationMinutes) > 0 ? Math.round(Number(config.examDurationMinutes)) : 180;
+  if (maxPerDay <= 0) return [];
+  const raw = Array.isArray(config?.sessionDurationsMinutes) ? config.sessionDurationsMinutes : [];
+  const resolved = [];
+  for (let i = 0; i < maxPerDay; i++) {
+    const candidate = i < raw.length ? Number(raw[i]) : NaN;
+    if (Number.isFinite(candidate) && candidate > 0) {
+      resolved.push(Math.round(candidate));
+    } else {
+      resolved.push(i > 0 ? resolved[i - 1] : fallback);
+    }
+  }
+  return resolved;
+}
+
 export function buildDailySessionPreview(config) {
   const startMin = parseTimeToMinutes(config?.dailyStartTime);
-  const duration = Number(config?.examDurationMinutes) || 0;
-  const breakMin = Number(config?.breakDurationMinutes) || 0;
+  const breakMin = Number(config?.breakDurationMinutes);
   const maxPerDay = Number(config?.maxExamsPerDay) || 0;
 
-  if (startMin === null || duration <= 0 || maxPerDay <= 0) {
+  if (startMin === null || !Number.isFinite(breakMin) || breakMin < 0 || maxPerDay <= 0) {
     return { isValid: false, error: 'Enter valid timing values.', sessions: [] };
   }
 
-  const lastEnd = startMin + maxPerDay * duration + (maxPerDay - 1) * breakMin;
-  if (lastEnd > 1440) {
-    return {
-      isValid: false,
-      error: 'Daily exams and breaks extend past midnight. Reduce exams per day, duration, or start earlier.',
-      sessions: [],
-    };
+  const durations = resolveSessionDurationsMinutes(config);
+  for (let i = 0; i < durations.length; i++) {
+    if (!Number.isFinite(durations[i]) || durations[i] < 15 || durations[i] > 720) {
+      return {
+        isValid: false,
+        error: `Session ${i + 1} duration must be between 0.25 and 12 hours (15 to 720 minutes).`,
+        sessions: [],
+      };
+    }
   }
 
+  let cursor = startMin;
   const sessions = [];
   for (let i = 0; i < maxPerDay; i++) {
-    const s = startMin + i * (duration + breakMin);
-    const e = s + duration;
+    const dur = durations[i];
+    const s = cursor;
+    const e = s + dur;
     sessions.push({
       sessionIndex: i + 1,
+      durationMinutes: dur,
       startTime: formatMinutes12h(s),
       endTime: formatMinutes12h(e),
     });
+    cursor = e + breakMin;
+  }
+
+  const lastEnd = startMin + durations.reduce((sum, d) => sum + d, 0) + (maxPerDay - 1) * breakMin;
+  if (lastEnd > 1440) {
+    return {
+      isValid: false,
+      error: 'Daily exams and breaks extend past midnight. Reduce exams per day, session durations, or start earlier.',
+      sessions: [],
+    };
   }
 
   return { isValid: true, error: null, sessions };

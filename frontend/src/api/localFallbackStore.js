@@ -1,7 +1,7 @@
 import { buildConflictGraph } from '../algorithms/graph';
 import { runGreedyColoring } from '../algorithms/greedyColoring';
 import { runBacktrackingColoring } from '../algorithms/backtrackingColoring';
-import { buildDailySessionPreview } from '../algorithms/roomAllocator';
+import { buildDailySessionPreview, resolveSessionDurationsMinutes } from '../algorithms/roomAllocator';
 
 const STORAGE_KEY = 'examia_local_fallback_db_v1';
 
@@ -33,6 +33,7 @@ function createInitialDb() {
       breakDurationMinutes: 60,
       numDays: 5,
       maxExamsPerDay: 2,
+      sessionDurationsMinutes: [180, 180],
     },
     latestTimetable: null,
     algoRuns: { greedy: null, backtracking: null },
@@ -436,17 +437,24 @@ export const localFallbackApi = {
 
   saveExamConfiguration(cfg) {
     const db = readDb();
-    const preview = buildDailySessionPreview(cfg);
+    const normalizedDurations = resolveSessionDurationsMinutes(cfg);
+    const normalizedCfg = {
+      ...cfg,
+      examDurationMinutes: normalizedDurations[0] || Number(cfg.examDurationMinutes) || 180,
+      sessionDurationsMinutes: normalizedDurations,
+    };
+    const preview = buildDailySessionPreview(normalizedCfg);
     if (!preview.isValid) {
       throw makeError(400, preview.error || 'Invalid examination schedule configuration.');
     }
     db.config = {
-      startDate: cfg.startDate,
-      dailyStartTime: cfg.dailyStartTime,
-      examDurationMinutes: Number(cfg.examDurationMinutes),
-      breakDurationMinutes: Number(cfg.breakDurationMinutes),
-      numDays: Number(cfg.numDays),
-      maxExamsPerDay: Number(cfg.maxExamsPerDay),
+      startDate: normalizedCfg.startDate,
+      dailyStartTime: normalizedCfg.dailyStartTime,
+      examDurationMinutes: normalizedDurations[0] || Number(normalizedCfg.examDurationMinutes),
+      breakDurationMinutes: Number(normalizedCfg.breakDurationMinutes),
+      numDays: Number(normalizedCfg.numDays),
+      maxExamsPerDay: Number(normalizedCfg.maxExamsPerDay),
+      sessionDurationsMinutes: normalizedDurations,
     };
     saveDb(db);
     return db.config;
