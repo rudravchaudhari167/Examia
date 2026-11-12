@@ -238,6 +238,14 @@ table {
     color: #8D6A77;
   }
 
+  .input-editorial:-webkit-autofill,
+  .input-editorial:-webkit-autofill:hover,
+  .input-editorial:-webkit-autofill:focus {
+    -webkit-text-fill-color: #361522;
+    -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
   /* Badge styles — Strictly Dusty Rose + Burgundy tonal hierarchy */
   .badge {
     display: inline-flex;

@@ -19,3 +19,4 @@ public class ClassroomInUseException extends RuntimeException {
         return usages;
     }
 }
+

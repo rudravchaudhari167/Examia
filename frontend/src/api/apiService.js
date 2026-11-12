@@ -1,11 +1,46 @@
 /**
  * Unified REST API Client for Examia's Java + SQLite Backend.
- * Interfaces with /api/* (proxied by Vite to localhost:8080).
+ * Prefers /api/* (proxied to localhost:8080) and automatically falls back
+ * to persistent localFallbackApi when running statically (e.g., Vercel)
+ * or without the Java backend started.
  */
+
+import { localFallbackApi } from './localFallbackStore';
 
 const API_BASE = '/api';
 
-async function apiRequest(path, options = {}) {
+function extractErrorMessage(data, status) {
+  if (!data) return `Request failed with status ${status}`;
+  if (typeof data === 'string') return data;
+  if (typeof data.error === 'string' && data.error.trim()) return data.error;
+  if (data.error && typeof data.error === 'object') {
+    if (typeof data.error.message === 'string' && data.error.message.trim()) {
+      return data.error.message;
+    }
+    if (typeof data.error.code === 'string') {
+      return `Error ${data.error.code}`;
+    }
+  }
+  if (typeof data.message === 'string' && data.message.trim()) return data.message;
+  return `Request failed with status ${status}`;
+}
+
+function isBackendUnavailableStatus(status, data) {
+  if (status === 404 || status === 502 || status === 503 || status === 504) {
+    return true;
+  }
+  // Vite / static host 500 without an Examia JSON { error } payload means proxy target is unreachable
+  if (status === 500 && (!data || !data.error || typeof data.error !== 'string')) {
+    return true;
+  }
+  // Non-JSON HTML responses on /api routes indicate static host fallback
+  if (data && typeof data.raw === 'string' && /<html|<!doctype/i.test(data.raw)) {
+    return true;
+  }
+  return false;
+}
+
+async function apiRequest(path, options = {}, fallbackFn = null) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs || 8000);
 
@@ -32,15 +67,27 @@ async function apiRequest(path, options = {}) {
     }
 
     if (!res.ok) {
-      const err = new Error(data?.error || `Request failed with status ${res.status}`);
+      if (fallbackFn && isBackendUnavailableStatus(res.status, data)) {
+        return fallbackFn();
+      }
+      const err = new Error(extractErrorMessage(data, res.status));
       err.status = res.status;
       err.payload = data;
       throw err;
     }
 
+    if (fallbackFn && data && typeof data.raw === 'string') {
+      return fallbackFn();
+    }
+
     return data;
   } catch (err) {
-    if (err.name === 'AbortError') {
+    const isNetworkOrAbort =
+      err?.name === 'AbortError' || err instanceof TypeError || err?.isNetworkError;
+    if (isNetworkOrAbort && fallbackFn) {
+      return fallbackFn();
+    }
+    if (err?.name === 'AbortError') {
       throw new Error('Backend request timed out. Ensure the Java server is running on port 8080.');
     }
     if (err instanceof TypeError) {
@@ -61,71 +108,100 @@ export async function checkBackendHealth() {
 }
 
 export async function fetchBootstrapState() {
-  return apiRequest('/bootstrap');
+  return apiRequest('/bootstrap', {}, () => localFallbackApi.fetchBootstrapState());
 }
 
 export async function createSubject(subject) {
-  return apiRequest('/subjects', { method: 'POST', body: subject });
+  return apiRequest('/subjects', { method: 'POST', body: subject }, () =>
+    localFallbackApi.createSubject(subject)
+  );
 }
 
 export async function updateSubject(subject) {
-  return apiRequest('/subjects', { method: 'PUT', body: subject });
+  return apiRequest('/subjects', { method: 'PUT', body: subject }, () =>
+    localFallbackApi.updateSubject(subject)
+  );
 }
 
 export async function deleteSubject(id) {
-  return apiRequest(`/subjects?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+  return apiRequest(`/subjects?id=${encodeURIComponent(id)}`, { method: 'DELETE' }, () =>
+    localFallbackApi.deleteSubject(id)
+  );
 }
 
 export async function createStudentGroup(group) {
-  return apiRequest('/groups', { method: 'POST', body: group });
+  return apiRequest('/groups', { method: 'POST', body: group }, () =>
+    localFallbackApi.createStudentGroup(group)
+  );
 }
 
 export async function updateStudentGroup(group) {
-  return apiRequest('/groups', { method: 'PUT', body: group });
+  return apiRequest('/groups', { method: 'PUT', body: group }, () =>
+    localFallbackApi.updateStudentGroup(group)
+  );
 }
 
 export async function deleteStudentGroup(id) {
-  return apiRequest(`/groups?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+  return apiRequest(`/groups?id=${encodeURIComponent(id)}`, { method: 'DELETE' }, () =>
+    localFallbackApi.deleteStudentGroup(id)
+  );
 }
 
 export async function updateSubjectEnrolments({ subjectId, groupIds, groupId, subjectIds }) {
-  return apiRequest('/enrolments', {
-    method: 'PUT',
-    body: { subjectId, groupIds, groupId, subjectIds },
-  });
+  return apiRequest(
+    '/enrolments',
+    {
+      method: 'PUT',
+      body: { subjectId, groupIds, groupId, subjectIds },
+    },
+    () => localFallbackApi.updateSubjectEnrolments({ subjectId, groupIds, groupId, subjectIds })
+  );
 }
 
 export async function createClassroom(classroom) {
-  return apiRequest('/classrooms', { method: 'POST', body: classroom });
+  return apiRequest('/classrooms', { method: 'POST', body: classroom }, () =>
+    localFallbackApi.createClassroom(classroom)
+  );
 }
 
 export async function updateClassroom(classroom) {
-  return apiRequest('/classrooms', { method: 'PUT', body: classroom });
+  return apiRequest('/classrooms', { method: 'PUT', body: classroom }, () =>
+    localFallbackApi.updateClassroom(classroom)
+  );
 }
 
 export async function deleteClassroom(id, clearSchedule = false) {
   return apiRequest(
     `/classrooms?id=${encodeURIComponent(id)}&clearSchedule=${clearSchedule ? 'true' : 'false'}`,
-    { method: 'DELETE' }
+    { method: 'DELETE' },
+    () => localFallbackApi.deleteClassroom(id, clearSchedule)
   );
 }
 
 export async function saveExamConfiguration(config) {
-  return apiRequest('/config', { method: 'PUT', body: config });
+  return apiRequest('/config', { method: 'PUT', body: config }, () =>
+    localFallbackApi.saveExamConfiguration(config)
+  );
 }
 
 export async function generateExaminationTimetable({ algorithm, maxSlots = 0, config }) {
-  return apiRequest('/timetable/generate', {
-    method: 'POST',
-    body: { algorithm, maxSlots, config },
-    timeoutMs: 15000,
-  });
+  return apiRequest(
+    '/timetable/generate',
+    {
+      method: 'POST',
+      body: { algorithm, maxSlots, config },
+      timeoutMs: 15000,
+    },
+    () => localFallbackApi.generateExaminationTimetable({ algorithm, maxSlots, config })
+  );
 }
 
 export async function clearGeneratedTimetable() {
-  return apiRequest('/timetable', { method: 'DELETE' });
+  return apiRequest('/timetable', { method: 'DELETE' }, () =>
+    localFallbackApi.clearGeneratedTimetable()
+  );
 }
 
 export async function resetSampleDataset() {
-  return apiRequest('/reset', { method: 'POST' });
+  return apiRequest('/reset', { method: 'POST' }, () => localFallbackApi.resetSampleDataset());
 }
