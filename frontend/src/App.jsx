@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
 import Toast from './components/Toast';
@@ -8,17 +9,20 @@ import DashboardView from './views/DashboardView';
 import ManageDataView from './views/ManageDataView';
 import TimetableGeneratorView from './views/TimetableGeneratorView';
 
-import { INITIAL_DIVISIONS, INITIAL_SUBJECTS } from './data/defaultData';
+import * as api from './api/apiService';
 import { buildConflictGraph } from './algorithms/graph';
 
-function recalcSubjectStudentCount(groupNames, divisionsList, fallbackCount = 45) {
-  const divMap = new Map(divisionsList.map((d) => [d.name, Number(d.studentCount) || 0]));
-  const total = groupNames.reduce((sum, name) => sum + (divMap.get(name) || 0), 0);
-  return total > 0 ? total : fallbackCount;
-}
+const DEFAULT_CONFIG = {
+  startDate: '2026-11-20',
+  dailyStartTime: '09:00',
+  examDurationMinutes: 180,
+  breakDurationMinutes: 60,
+  numDays: 5,
+  maxExamsPerDay: 2,
+};
 
 export default function App() {
-  // Navigation State: strictly 3 main pages ('dashboard' | 'manage' | 'generator')
+  // Strictly 3 pages: 'dashboard' | 'manage' | 'generator'
   const [activeTab, setActiveTab] = useState('dashboard');
   const [renderedTab, setRenderedTab] = useState('dashboard');
   const [, startTabTransition] = useTransition();
@@ -39,39 +43,14 @@ export default function App() {
     mainScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });
   }, [renderedTab]);
 
-  // Core Data persisted in localStorage with sample defaults
-  const [subjects, setSubjects] = useState(() => {
-    try {
-      const saved = localStorage.getItem('examoptima_subjects');
-      return saved ? JSON.parse(saved) : INITIAL_SUBJECTS;
-    } catch {
-      return INITIAL_SUBJECTS;
-    }
-  });
-
-  const [divisions, setDivisions] = useState(() => {
-    try {
-      const saved = localStorage.getItem('examoptima_divisions');
-      return saved ? JSON.parse(saved) : INITIAL_DIVISIONS;
-    } catch {
-      return INITIAL_DIVISIONS;
-    }
-  });
-
-  const [timetableResult, setTimetableResult] = useState(() => {
-    try {
-      const saved = localStorage.getItem('examoptima_timetable');
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
-
-  // Track individual algorithm runs on current dataset for comparison
-  const [algoRuns, setAlgoRuns] = useState({
-    greedy: null,
-    backtracking: null,
-  });
+  // Real SQLite-backed application state
+  const [subjects, setSubjects] = useState([]);
+  const [studentGroups, setStudentGroups] = useState([]);
+  const [classrooms, setClassrooms] = useState([]);
+  const [config, setConfig] = useState(DEFAULT_CONFIG);
+  const [latestTimetable, setLatestTimetable] = useState(null);
+  const [algoRuns, setAlgoRuns] = useState({ greedy: null, backtracking: null });
+  const [backendError, setBackendError] = useState(null);
 
   // Toast State
   const [toast, setToast] = useState(null);
@@ -79,7 +58,7 @@ export default function App() {
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    toastTimerRef.current = setTimeout(() => setToast(null), 3800);
+    toastTimerRef.current = setTimeout(() => setToast(null), 4000);
   }, []);
 
   useEffect(() => {
@@ -88,7 +67,29 @@ export default function App() {
     };
   }, []);
 
-  // Initial full-page loading screen state (shown only on initial load / reload)
+  const applyBootstrapState = useCallback((data) => {
+    if (!data) return;
+    setSubjects(Array.isArray(data.subjects) ? data.subjects : []);
+    setStudentGroups(Array.isArray(data.studentGroups) ? data.studentGroups : []);
+    setClassrooms(Array.isArray(data.classrooms) ? data.classrooms : []);
+    if (data.config) setConfig(data.config);
+    setLatestTimetable(data.latestTimetable ?? null);
+    setAlgoRuns(data.algoRuns ?? { greedy: null, backtracking: null });
+    setBackendError(null);
+  }, []);
+
+  const refreshFromBackend = useCallback(async () => {
+    try {
+      const data = await api.fetchBootstrapState();
+      applyBootstrapState(data);
+      return data;
+    } catch (err) {
+      setBackendError(err.message || 'Unable to connect to Examia backend.');
+      return null;
+    }
+  }, [applyBootstrapState]);
+
+  // Initial full-page loading screen + initial SQLite bootstrap
   const [isAppReady, setIsAppReady] = useState(false);
   const [showLoader, setShowLoader] = useState(true);
 
@@ -106,159 +107,117 @@ export default function App() {
           ? Promise.race([document.fonts.ready, delay(900)])
           : Promise.resolve();
 
-      const minShowcaseMs = reducedMotion ? 220 : 1380;
+      const bootstrapPromise = refreshFromBackend();
+      const minShowcaseMs = reducedMotion ? 220 : 1200;
 
-      await Promise.race([
-        Promise.all([fontsReady, delay(minShowcaseMs)]),
-        delay(2400),
-      ]);
-
+      await Promise.all([fontsReady, bootstrapPromise, delay(minShowcaseMs)]);
       if (cancelled) return;
       setIsAppReady(true);
     };
 
     initializeApp();
-
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshFromBackend]);
 
-  // Sync changes to localStorage
-  useEffect(() => {
-    localStorage.setItem('examoptima_subjects', JSON.stringify(subjects));
-  }, [subjects]);
-
-  useEffect(() => {
-    localStorage.setItem('examoptima_divisions', JSON.stringify(divisions));
-  }, [divisions]);
-
-  useEffect(() => {
-    if (timetableResult) {
-      localStorage.setItem('examoptima_timetable', JSON.stringify(timetableResult));
-    } else {
-      localStorage.removeItem('examoptima_timetable');
-    }
-  }, [timetableResult]);
-
-  // Dynamically compute conflict graph from subjects and shared student groups
+  // Dynamically compute conflict graph from persisted subjects & group enrolments
   const graph = useMemo(() => buildConflictGraph(subjects), [subjects]);
 
-  // Subject CRUD Handlers
-  const handleAddSubject = (newSubject) => {
-    setSubjects((prev) => [...prev, newSubject]);
-    setAlgoRuns({ greedy: null, backtracking: null });
-    showToast(`Subject ${newSubject.code} added.`);
+  // --- CRUD Handlers backed by Java REST + SQLite ---
+  const handleAddSubject = async (payload) => {
+    const created = await api.createSubject(payload);
+    await refreshFromBackend();
+    showToast(`Subject ${created.code} added to database.`);
   };
 
-  const handleEditSubject = (updated) => {
-    setSubjects((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-    setAlgoRuns({ greedy: null, backtracking: null });
+  const handleEditSubject = async (payload) => {
+    const updated = await api.updateSubject(payload);
+    await refreshFromBackend();
     showToast(`Subject ${updated.code} updated.`);
   };
 
-  const handleDeleteSubject = (id) => {
-    const target = subjects.find((s) => s.id === id);
-    setSubjects((prev) => prev.filter((s) => s.id !== id));
-    setAlgoRuns({ greedy: null, backtracking: null });
-    showToast(`Subject ${target?.code || ''} deleted.`);
+  const handleDeleteSubject = async (id) => {
+    const data = await api.deleteSubject(id);
+    applyBootstrapState(data);
+    showToast('Subject removed.');
   };
 
-  // Student Group CRUD Handlers (keeps subject group references synced)
-  const handleAddDivision = (newGroup) => {
-    setDivisions((prev) => [...prev, newGroup]);
-    showToast(`Student group "${newGroup.name}" added.`);
+  const handleAddGroup = async (payload) => {
+    const created = await api.createStudentGroup(payload);
+    await refreshFromBackend();
+    showToast(`Student group "${created.name}" added.`);
   };
 
-  const handleEditDivision = (updatedGroup, previousName) => {
-    const nextDivisions = divisions.map((d) => (d.id === updatedGroup.id ? updatedGroup : d));
-    setDivisions(nextDivisions);
+  const handleEditGroup = async (payload) => {
+    const updated = await api.updateStudentGroup(payload);
+    await refreshFromBackend();
+    showToast(`Student group "${updated.name}" updated.`);
+  };
 
-    setSubjects((prev) =>
-      prev.map((subj) => {
-        const currentGroups = Array.isArray(subj.divisions) ? subj.divisions : [];
-        const renamedGroups =
-          previousName && previousName !== updatedGroup.name
-            ? currentGroups.map((name) => (name === previousName ? updatedGroup.name : name))
-            : currentGroups;
-        return {
-          ...subj,
-          divisions: renamedGroups,
-          studentCount: recalcSubjectStudentCount(renamedGroups, nextDivisions, subj.studentCount),
-        };
-      })
+  const handleDeleteGroup = async (id) => {
+    const data = await api.deleteStudentGroup(id);
+    applyBootstrapState(data);
+    showToast('Student group deleted.');
+  };
+
+  const handleUpdateEnrolments = async ({ subjectId, groupIds, groupId, subjectIds }) => {
+    const data = await api.updateSubjectEnrolments({ subjectId, groupIds, groupId, subjectIds });
+    applyBootstrapState(data);
+    showToast('Subject enrolments saved and totals recalculated.');
+  };
+
+  const handleAddClassroom = async (payload) => {
+    const created = await api.createClassroom(payload);
+    await refreshFromBackend();
+    showToast(`Classroom "${created.name}" added.`);
+  };
+
+  const handleEditClassroom = async (payload) => {
+    const updated = await api.updateClassroom(payload);
+    await refreshFromBackend();
+    showToast(`Classroom "${updated.name}" updated.`);
+  };
+
+  const handleDeleteClassroom = async (id, clearSchedule = false) => {
+    const data = await api.deleteClassroom(id, clearSchedule);
+    applyBootstrapState(data);
+    showToast(
+      clearSchedule
+        ? 'Cleared assigned schedule and deleted classroom.'
+        : 'Classroom deleted.'
     );
-
-    setAlgoRuns({ greedy: null, backtracking: null });
-    showToast(`Student group "${updatedGroup.name}" updated.`);
   };
 
-  const handleDeleteDivision = (id) => {
-    const target = divisions.find((d) => d.id === id);
-    const nextDivisions = divisions.filter((d) => d.id !== id);
-    setDivisions(nextDivisions);
-
-    if (target) {
-      setSubjects((prev) =>
-        prev.map((subj) => {
-          const filtered = (subj.divisions || []).filter((name) => name !== target.name);
-          return {
-            ...subj,
-            divisions: filtered,
-            studentCount: recalcSubjectStudentCount(filtered, nextDivisions, subj.studentCount),
-          };
-        })
-      );
-    }
-
-    setAlgoRuns({ greedy: null, backtracking: null });
-    showToast(`Student group "${target?.name || ''}" deleted.`);
+  const handleResetSampleData = async () => {
+    const data = await api.resetSampleDataset();
+    applyBootstrapState(data);
+    showToast('Default sample dataset restored in database.');
   };
 
-  // Update Enrolments for a Specific Student Group
-  const handleUpdateDivisionEnrolments = (groupName, selectedSubjectIds) => {
-    const selectedSet = new Set(selectedSubjectIds);
-    setSubjects((prev) =>
-      prev.map((subj) => {
-        const existing = Array.isArray(subj.divisions) ? subj.divisions : [];
-        const hasGroup = existing.includes(groupName);
-        const shouldHaveGroup = selectedSet.has(subj.id);
+  const handleSaveConfig = async (nextConfig) => {
+    const saved = await api.saveExamConfiguration(nextConfig);
+    setConfig(saved);
+    showToast('Examination configuration saved.');
+    return saved;
+  };
 
-        if (hasGroup === shouldHaveGroup) return subj;
-
-        const nextGroups = shouldHaveGroup
-          ? [...existing, groupName]
-          : existing.filter((name) => name !== groupName);
-
-        return {
-          ...subj,
-          divisions: nextGroups,
-          studentCount: recalcSubjectStudentCount(nextGroups, divisions, subj.studentCount),
-        };
-      })
+  const handleGenerateTimetable = async ({ algorithm, maxSlots, config: incomingConfig }) => {
+    const res = await api.generateExaminationTimetable({
+      algorithm,
+      maxSlots,
+      config: incomingConfig,
+    });
+    if (res.timetable) setLatestTimetable(res.timetable);
+    if (res.algoRuns) setAlgoRuns(res.algoRuns);
+    if (res.config) setConfig(res.config);
+    if (res.classrooms) setClassrooms(res.classrooms);
+    showToast(
+      `Generated conflict-free timetable (${res.timetable?.numSlots ?? 0} slots, ${
+        res.timetable?.scheduledExams?.length ?? 0
+      } exams).`
     );
-
-    setAlgoRuns({ greedy: null, backtracking: null });
-    showToast(`Enrolments updated for ${groupName}.`);
-  };
-
-  // Reset Dataset to Sample Data
-  const handleResetSampleData = () => {
-    setSubjects(INITIAL_SUBJECTS);
-    setDivisions(INITIAL_DIVISIONS);
-    setTimetableResult(null);
-    setAlgoRuns({ greedy: null, backtracking: null });
-    showToast('Restored default sample dataset.');
-  };
-
-  // Timetable Generated Handler
-  const handleTimetableGenerated = (algoKey, result) => {
-    setTimetableResult(result);
-    setAlgoRuns((prev) => ({
-      ...prev,
-      [algoKey]: result,
-    }));
-    showToast(`Conflict-free timetable generated (${result.numSlots} slots).`);
+    return res;
   };
 
   return (
@@ -283,13 +242,36 @@ export default function App() {
             ref={mainScrollRef}
             className="examia-main-scroll flex-1 overflow-y-auto overscroll-y-contain px-3.5 sm:px-6 lg:px-10 py-4 sm:py-6 examia-safe-pb"
           >
-            <div key={renderedTab} className="max-w-6xl mx-auto">
+            <div key={renderedTab} className="max-w-6xl mx-auto space-y-4">
+              {backendError && (
+                <div
+                  role="alert"
+                  className="p-4 rounded-2xl bg-[#F8EAEF] border-2 border-[#642F43] text-[#361522] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm"
+                >
+                  <div className="flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-[#642F43] shrink-0 mt-0.5" aria-hidden="true" />
+                    <div>
+                      <p className="font-bold text-[#642F43]">Database Server Unavailable</p>
+                      <p className="text-[#4A1F30] mt-0.5">{backendError}</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={refreshFromBackend}
+                    className="btn-secondary min-h-[40px] px-3.5 py-2 text-xs font-semibold inline-flex items-center gap-1.5 shrink-0 self-start sm:self-auto"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span>Retry Connection</span>
+                  </button>
+                </div>
+              )}
+
               {renderedTab === 'dashboard' && (
                 <DashboardView
                   subjects={subjects}
-                  divisions={divisions}
-                  graph={graph}
-                  timetableResult={timetableResult}
+                  studentGroups={studentGroups}
+                  classrooms={classrooms}
+                  latestTimetable={latestTimetable}
                   setActiveTab={handleTabChange}
                 />
               )}
@@ -297,14 +279,18 @@ export default function App() {
               {renderedTab === 'manage' && (
                 <ManageDataView
                   subjects={subjects}
-                  divisions={divisions}
+                  studentGroups={studentGroups}
+                  classrooms={classrooms}
                   onAddSubject={handleAddSubject}
                   onEditSubject={handleEditSubject}
                   onDeleteSubject={handleDeleteSubject}
-                  onAddDivision={handleAddDivision}
-                  onEditDivision={handleEditDivision}
-                  onDeleteDivision={handleDeleteDivision}
-                  onUpdateDivisionEnrolments={handleUpdateDivisionEnrolments}
+                  onAddGroup={handleAddGroup}
+                  onEditGroup={handleEditGroup}
+                  onDeleteGroup={handleDeleteGroup}
+                  onUpdateEnrolments={handleUpdateEnrolments}
+                  onAddClassroom={handleAddClassroom}
+                  onEditClassroom={handleEditClassroom}
+                  onDeleteClassroom={handleDeleteClassroom}
                   onResetSampleData={handleResetSampleData}
                 />
               )}
@@ -312,10 +298,13 @@ export default function App() {
               {renderedTab === 'generator' && (
                 <TimetableGeneratorView
                   subjects={subjects}
+                  classrooms={classrooms}
                   graph={graph}
-                  timetableResult={timetableResult}
+                  config={config}
+                  latestTimetable={latestTimetable}
                   algoRuns={algoRuns}
-                  onTimetableGenerated={handleTimetableGenerated}
+                  onSaveConfig={handleSaveConfig}
+                  onGenerateTimetable={handleGenerateTimetable}
                   onNavigateToManage={() => handleTabChange('manage')}
                 />
               )}

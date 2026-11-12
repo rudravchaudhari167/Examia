@@ -9,9 +9,10 @@ backend/bin/
 .env
 .env.*
 
-# Logs & OS artifacts
+# Logs & OS artifacts & runtime DB
 *.log
 npm-debug.log*
 .DS_Store
 Thumbs.db
+backend/data/
 

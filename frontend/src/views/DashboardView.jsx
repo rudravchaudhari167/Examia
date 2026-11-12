@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import {
   ArrowRight,
   BookOpen,
+  Building2,
   CalendarCheck,
-  Share2,
   Sparkles,
   Users,
 } from 'lucide-react';
@@ -21,23 +21,23 @@ function getGreetingForDate(date = new Date()) {
 const STEPS = [
   {
     number: '1',
-    title: 'Add subjects and student groups.',
+    title: 'Add subjects, student groups, enrolments, and classrooms.',
   },
   {
     number: '2',
-    title: 'Identify conflicts between subjects.',
+    title: 'Configure exam dates, session timings, and coloring algorithm.',
   },
   {
     number: '3',
-    title: 'Generate a conflict-free timetable.',
+    title: 'Generate a conflict-free schedule with automatic room allocation.',
   },
 ];
 
 export default function DashboardView({
   subjects,
-  divisions,
-  graph,
-  timetableResult,
+  studentGroups,
+  classrooms,
+  latestTimetable,
   setActiveTab,
 }) {
   const [greeting, setGreeting] = useState(() => getGreetingForDate());
@@ -62,19 +62,27 @@ export default function DashboardView({
     };
   }, []);
 
-  const totalStudentsInGroups = divisions.reduce(
+  const totalStudentsInGroups = studentGroups.reduce(
     (acc, group) => acc + (Number(group.studentCount) || 0),
     0
   );
 
-  const slotValue = timetableResult?.numSlots ?? 'Pending';
-  const slotSubtitle = timetableResult
-    ? `${timetableResult.algorithmName.split(' ')[0]} · Validated`
-    : 'Generate to assign slots';
+  const availableRooms = classrooms.filter((r) => r.isAvailable);
+  const availableSeats = availableRooms.reduce(
+    (acc, r) => acc + (Number(r.capacity) || 0),
+    0
+  );
+
+  const scheduledExamsCount = latestTimetable?.scheduledExams?.length ?? 0;
+  const scheduledSubtitle = latestTimetable
+    ? `${latestTimetable.numSlots} ${latestTimetable.numSlots === 1 ? 'slot' : 'slots'} · ${
+        latestTimetable.algorithmKey === 'backtracking' ? 'Backtracking' : 'Greedy'
+      }`
+    : 'Generate timetable to schedule';
 
   return (
     <div className="space-y-5 animate-fade-in">
-      {/* Welcome Section + Primary Action */}
+      {/* Welcome Section + Prominent CTA */}
       <section className="card-premium p-5 sm:p-7 relative overflow-hidden bg-gradient-to-br from-[#FDF9FA] via-[#FAF1F4] to-[#F3E1E7]">
         <div
           aria-hidden="true"
@@ -93,7 +101,7 @@ export default function DashboardView({
               Plan smarter. Schedule better.
             </p>
             <p className="text-sm text-[#6F4253] leading-relaxed">
-              Examia builds conflict-free examination timetables so no student group ever sits two exams at the same time.
+              Generate conflict-free examination timetables with real date and time slots and automatic classroom seat allocation.
             </p>
           </div>
 
@@ -111,7 +119,7 @@ export default function DashboardView({
         </div>
       </section>
 
-      {/* Quick Overview Cards (Live Backend / State Values) */}
+      {/* Summary Cards (Actual SQLite Backend Counts) */}
       <section aria-label="Quick overview">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
           <StatCard
@@ -119,8 +127,8 @@ export default function DashboardView({
             value={subjects.length}
             subtitle={
               subjects.length === 1
-                ? '1 exam subject configured'
-                : `${subjects.length} exam subjects configured`
+                ? '1 exam subject stored'
+                : `${subjects.length} exam subjects stored`
             }
             icon={BookOpen}
             accentColor="lavender"
@@ -128,28 +136,24 @@ export default function DashboardView({
 
           <StatCard
             title="Total Student Groups"
-            value={divisions.length}
-            subtitle={`${totalStudentsInGroups} enrolled students`}
+            value={studentGroups.length}
+            subtitle={`${totalStudentsInGroups} total students across groups`}
             icon={Users}
             accentColor="sage"
           />
 
           <StatCard
-            title="Total Conflicts"
-            value={graph.edgeCount}
-            subtitle={
-              graph.edgeCount === 0
-                ? 'No overlapping group exams'
-                : `${graph.edgeCount} subject ${graph.edgeCount === 1 ? 'overlap' : 'overlaps'} found`
-            }
-            icon={Share2}
+            title="Total Classrooms"
+            value={classrooms.length}
+            subtitle={`${availableRooms.length} available · ${availableSeats} seats`}
+            icon={Building2}
             accentColor="peach"
           />
 
           <StatCard
-            title="Total Exam Slots"
-            value={slotValue}
-            subtitle={slotSubtitle}
+            title="Total Scheduled Exams"
+            value={scheduledExamsCount}
+            subtitle={scheduledSubtitle}
             icon={CalendarCheck}
             accentColor="rose"
           />
@@ -167,7 +171,7 @@ export default function DashboardView({
             onClick={() => setActiveTab('manage')}
             className="text-xs font-semibold text-[#642F43] hover:text-[#4A1F30] underline underline-offset-4 self-start sm:self-auto"
           >
-            Edit subjects &amp; student groups
+            Manage subjects, groups &amp; classrooms
           </button>
         </div>
 
@@ -193,4 +197,3 @@ export default function DashboardView({
     </div>
   );
 }
-

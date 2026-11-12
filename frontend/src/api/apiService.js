@@ -1,155 +1,131 @@
 /**
- * Unified API & Execution Service
- * Seamlessly interfaces with either the lightweight Java DAA REST API (Port 8080)
- * or the in-browser high-precision JavaScript DAA implementation.
+ * Unified REST API Client for Examia's Java + SQLite Backend.
+ * Interfaces with /api/* (proxied by Vite to localhost:8080).
  */
 
-import { buildConflictGraph } from '../algorithms/graph.js';
-import { runGreedyColoring } from '../algorithms/greedyColoring.js';
-import { runBacktrackingColoring } from '../algorithms/backtrackingColoring.js';
+const API_BASE = '/api';
 
-const JAVA_BACKEND_URL = "http://localhost:8080/api";
+async function apiRequest(path, options = {}) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs || 8000);
 
-export async function checkJavaBackendHealth() {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1200);
-    const res = await fetch(`${JAVA_BACKEND_URL}/health`, {
-      method: "GET",
-      signal: controller.signal
+    const res = await fetch(`${API_BASE}${path}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        ...(options.headers || {}),
+      },
+      method: options.method || 'GET',
+      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      signal: controller.signal,
     });
-    clearTimeout(timeoutId);
-    if (res.ok) {
-      const data = await res.json();
-      return { isConnected: true, data };
+
+    const text = await res.text();
+    let data = null;
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { raw: text };
+      }
     }
+
+    if (!res.ok) {
+      const err = new Error(data?.error || `Request failed with status ${res.status}`);
+      err.status = res.status;
+      err.payload = data;
+      throw err;
+    }
+
+    return data;
   } catch (err) {
-    // Java backend is not running or unreachable
-  }
-  return { isConnected: false, data: null };
-}
-
-export async function executeGreedyColoring(subjects, enginePreference = "auto") {
-  const localGraph = buildConflictGraph(subjects);
-
-  if (enginePreference !== "js") {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000);
-      const res = await fetch(`${JAVA_BACKEND_URL}/solve/greedy`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subjects }),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      if (res.ok) {
-        const javaResult = await res.json();
-        return {
-          ...javaResult,
-          executedOn: "Java 21 LTS Engine (Native Backend: Port 8080)",
-          isBackendJava: true
-        };
-      }
-    } catch (e) {
-      if (enginePreference === "java") {
-        throw new Error("Java backend is not responding. Please run ./run-backend.sh or switch to Browser Engine.");
-      }
+    if (err.name === 'AbortError') {
+      throw new Error('Backend request timed out. Ensure the Java server is running on port 8080.');
     }
-  }
-
-  // Local JS fallback
-  const localResult = runGreedyColoring(localGraph);
-  return {
-    ...localResult,
-    executedOn: "Browser DAA Engine (Client-side JavaScript)",
-    isBackendJava: false
-  };
-}
-
-export async function executeBacktrackingColoring(subjects, maxSlots = 0, enginePreference = "auto") {
-  const localGraph = buildConflictGraph(subjects);
-
-  if (enginePreference !== "js") {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3500);
-      const res = await fetch(`${JAVA_BACKEND_URL}/solve/backtrack`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subjects, maxSlots }),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      if (res.ok) {
-        const javaResult = await res.json();
-        return {
-          ...javaResult,
-          executedOn: "Java 21 LTS Engine (Native Backend: Port 8080)",
-          isBackendJava: true
-        };
-      }
-    } catch (e) {
-      if (enginePreference === "java") {
-        throw new Error("Java backend is not responding. Please run ./run-backend.sh or switch to Browser Engine.");
-      }
+    if (err instanceof TypeError) {
+      const connErr = new Error(
+        'Cannot connect to the Examia Java backend server (port 8080). Start it with ./run-backend.sh or ./start.sh.'
+      );
+      connErr.isNetworkError = true;
+      throw connErr;
     }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  // Local JS fallback
-  const localResult = runBacktrackingColoring(localGraph, maxSlots);
-  return {
-    ...localResult,
-    executedOn: "Browser DAA Engine (Client-side JavaScript)",
-    isBackendJava: false
-  };
 }
 
-export async function executeAlgorithmComparison(subjects, maxSlots = 0, enginePreference = "auto") {
-  const localGraph = buildConflictGraph(subjects);
-
-  if (enginePreference !== "js") {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000);
-      const res = await fetch(`${JAVA_BACKEND_URL}/compare`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subjects, maxSlots }),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      if (res.ok) {
-        const javaData = await res.json();
-        return {
-          ...javaData,
-          executedOn: "Java 21 LTS Engine (Native Backend: Port 8080)",
-          isBackendJava: true
-        };
-      }
-    } catch (e) {
-      if (enginePreference === "java") {
-        throw new Error("Java backend is not responding. Please run ./run-backend.sh or switch to Browser Engine.");
-      }
-    }
-  }
-
-  // Local JS fallback
-  const greedy = runGreedyColoring(localGraph);
-  const backtracking = runBacktrackingColoring(localGraph, maxSlots);
-
-  return {
-    greedy,
-    backtracking,
-    graphMetrics: {
-      vertexCount: localGraph.vertexCount,
-      edgeCount: localGraph.edgeCount,
-      maxDegree: localGraph.maxDegree,
-      avgDegree: localGraph.avgDegree,
-      density: localGraph.density
-    },
-    executedOn: "Browser DAA Engine (Client-side JavaScript)",
-    isBackendJava: false
-  };
+export async function checkBackendHealth() {
+  return apiRequest('/health', { timeoutMs: 2500 });
 }
 
+export async function fetchBootstrapState() {
+  return apiRequest('/bootstrap');
+}
+
+export async function createSubject(subject) {
+  return apiRequest('/subjects', { method: 'POST', body: subject });
+}
+
+export async function updateSubject(subject) {
+  return apiRequest('/subjects', { method: 'PUT', body: subject });
+}
+
+export async function deleteSubject(id) {
+  return apiRequest(`/subjects?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+export async function createStudentGroup(group) {
+  return apiRequest('/groups', { method: 'POST', body: group });
+}
+
+export async function updateStudentGroup(group) {
+  return apiRequest('/groups', { method: 'PUT', body: group });
+}
+
+export async function deleteStudentGroup(id) {
+  return apiRequest(`/groups?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+export async function updateSubjectEnrolments({ subjectId, groupIds, groupId, subjectIds }) {
+  return apiRequest('/enrolments', {
+    method: 'PUT',
+    body: { subjectId, groupIds, groupId, subjectIds },
+  });
+}
+
+export async function createClassroom(classroom) {
+  return apiRequest('/classrooms', { method: 'POST', body: classroom });
+}
+
+export async function updateClassroom(classroom) {
+  return apiRequest('/classrooms', { method: 'PUT', body: classroom });
+}
+
+export async function deleteClassroom(id, clearSchedule = false) {
+  return apiRequest(
+    `/classrooms?id=${encodeURIComponent(id)}&clearSchedule=${clearSchedule ? 'true' : 'false'}`,
+    { method: 'DELETE' }
+  );
+}
+
+export async function saveExamConfiguration(config) {
+  return apiRequest('/config', { method: 'PUT', body: config });
+}
+
+export async function generateExaminationTimetable({ algorithm, maxSlots = 0, config }) {
+  return apiRequest('/timetable/generate', {
+    method: 'POST',
+    body: { algorithm, maxSlots, config },
+    timeoutMs: 15000,
+  });
+}
+
+export async function clearGeneratedTimetable() {
+  return apiRequest('/timetable', { method: 'DELETE' });
+}
+
+export async function resetSampleDataset() {
+  return apiRequest('/reset', { method: 'POST' });
+}

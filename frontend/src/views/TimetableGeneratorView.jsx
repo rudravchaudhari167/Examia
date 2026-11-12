@@ -1,20 +1,25 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
+  Building2,
+  Calendar,
   Check,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
+  Clock,
   Download,
   Loader2,
   Printer,
   ShieldCheck,
   Sparkles,
+  Users,
   Zap,
 } from 'lucide-react';
 import {
-  executeBacktrackingColoring,
-  executeGreedyColoring,
-} from '../api/apiService';
+  buildDailySessionPreview,
+  formatIsoDateDisplay,
+} from '../algorithms/roomAllocator';
 import { validateSchedule } from '../algorithms/graph';
 import { SLOT_PALETTES } from '../data/defaultData';
 import ConflictGraphCanvas from '../components/ConflictGraphCanvas';
@@ -27,26 +32,164 @@ function escapeCsvCell(value) {
   return str;
 }
 
+function minutesToHoursString(minutes) {
+  const hrs = Number(minutes || 0) / 60;
+  return Number.isInteger(hrs) ? String(hrs) : String(Math.round(hrs * 100) / 100);
+}
+
+function formatDurationBadge(minutes) {
+  const m = Number(minutes || 0);
+  if (m <= 0) return '0 min';
+  const hrs = Math.floor(m / 60);
+  const rem = m % 60;
+  if (hrs === 0) return `${rem} min`;
+  if (rem === 0) return `${hrs} hr${hrs === 1 ? '' : 's'} (${m} min)`;
+  return `${hrs} hr ${rem} min (${m} min)`;
+}
+
 export default function TimetableGeneratorView({
   subjects,
+  classrooms = [],
   graph,
-  timetableResult,
+  config,
+  latestTimetable,
   algoRuns,
-  onTimetableGenerated,
+  onSaveConfig,
+  onGenerateTimetable,
   onNavigateToManage,
 }) {
   const [selectedAlgo, setSelectedAlgo] = useState(() =>
-    timetableResult?.algorithmName?.includes('Backtracking') ? 'backtracking' : 'greedy'
+    latestTimetable?.algorithmKey === 'backtracking' ? 'backtracking' : 'greedy'
   );
   const [maxSlotsInput, setMaxSlotsInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSavingConfig, setIsSavingConfig] = useState(false);
   const [statusFeedback, setStatusFeedback] = useState(null);
+  const [configFeedback, setConfigFeedback] = useState(null);
+  const [expandedExamIds, setExpandedExamIds] = useState({});
+
+  const [draftConfig, setDraftConfig] = useState(() => ({
+    startDate: config?.startDate || '2026-11-20',
+    dailyStartTime: config?.dailyStartTime || '09:00',
+    examDurationHours: minutesToHoursString(config?.examDurationMinutes ?? 180),
+    breakDurationHours: minutesToHoursString(config?.breakDurationMinutes ?? 60),
+    numDays: String(config?.numDays ?? 5),
+    maxExamsPerDay: String(config?.maxExamsPerDay ?? 2),
+  }));
+
+  useEffect(() => {
+    if (!config) return;
+    setDraftConfig({
+      startDate: config.startDate || '2026-11-20',
+      dailyStartTime: config.dailyStartTime || '09:00',
+      examDurationHours: minutesToHoursString(config.examDurationMinutes ?? 180),
+      breakDurationHours: minutesToHoursString(config.breakDurationMinutes ?? 60),
+      numDays: String(config.numDays ?? 5),
+      maxExamsPerDay: String(config.maxExamsPerDay ?? 2),
+    });
+  }, [config]);
+
+  useEffect(() => {
+    if (latestTimetable?.algorithmKey) {
+      setSelectedAlgo(
+        latestTimetable.algorithmKey === 'backtracking' ? 'backtracking' : 'greedy'
+      );
+    }
+  }, [latestTimetable?.algorithmKey]);
+
+  const parsedConfigPayload = useMemo(() => {
+    const examHrs = parseFloat(draftConfig.examDurationHours);
+    const breakHrs = parseFloat(draftConfig.breakDurationHours);
+    const days = parseInt(draftConfig.numDays, 10);
+    const maxPerDay = parseInt(draftConfig.maxExamsPerDay, 10);
+
+    return {
+      startDate: draftConfig.startDate,
+      dailyStartTime: draftConfig.dailyStartTime,
+      examDurationMinutes: Number.isFinite(examHrs) ? Math.round(examHrs * 60) : 0,
+      breakDurationMinutes: Number.isFinite(breakHrs) ? Math.round(breakHrs * 60) : -1,
+      numDays: Number.isFinite(days) ? days : 0,
+      maxExamsPerDay: Number.isFinite(maxPerDay) ? maxPerDay : 0,
+    };
+  }, [draftConfig]);
+
+  const sessionPreview = useMemo(
+    () => buildDailySessionPreview(parsedConfigPayload),
+    [parsedConfigPayload]
+  );
+
+  const validateDraftConfig = () => {
+    if (!parsedConfigPayload.startDate || !/^\d{4}-\d{2}-\d{2}$/.test(parsedConfigPayload.startDate)) {
+      return 'Select a valid starting exam date.';
+    }
+    if (!parsedConfigPayload.dailyStartTime || !/^\d{2}:\d{2}$/.test(parsedConfigPayload.dailyStartTime)) {
+      return 'Select a valid daily start time.';
+    }
+    if (parsedConfigPayload.examDurationMinutes < 15 || parsedConfigPayload.examDurationMinutes > 720) {
+      return 'Exam duration must be between 0.25 hours (15 min) and 12 hours.';
+    }
+    if (parsedConfigPayload.breakDurationMinutes < 0 || parsedConfigPayload.breakDurationMinutes > 480) {
+      return 'Break duration must be between 0 and 8 hours.';
+    }
+    if (parsedConfigPayload.numDays < 1 || parsedConfigPayload.numDays > 60) {
+      return 'Number of exam days must be between 1 and 60.';
+    }
+    if (parsedConfigPayload.maxExamsPerDay < 1 || parsedConfigPayload.maxExamsPerDay > 10) {
+      return 'Max exams per day must be between 1 and 10.';
+    }
+    if (!sessionPreview.isValid) {
+      return sessionPreview.error;
+    }
+    return null;
+  };
+
+  const handleSaveConfigClick = async (e) => {
+    e.preventDefault();
+    const validationErr = validateDraftConfig();
+    if (validationErr) {
+      setConfigFeedback({ type: 'error', message: validationErr });
+      return;
+    }
+
+    setIsSavingConfig(true);
+    setConfigFeedback(null);
+    try {
+      await onSaveConfig(parsedConfigPayload);
+      setConfigFeedback({
+        type: 'success',
+        message: 'Examination schedule configuration saved to database.',
+      });
+    } catch (err) {
+      setConfigFeedback({
+        type: 'error',
+        message: err?.message || 'Could not save examination configuration.',
+      });
+    } finally {
+      setIsSavingConfig(false);
+    }
+  };
 
   const handleGenerate = async () => {
     if (!subjects || subjects.length === 0) {
       setStatusFeedback({
         type: 'error',
         message: 'Add at least one subject in Manage Data before generating a timetable.',
+      });
+      return;
+    }
+    if (!classrooms || classrooms.length === 0) {
+      setStatusFeedback({
+        type: 'error',
+        message: 'Add at least one classroom in Manage Data before generating a timetable.',
+      });
+      return;
+    }
+
+    const configErr = validateDraftConfig();
+    if (configErr) {
+      setStatusFeedback({
+        type: 'error',
+        message: configErr,
       });
       return;
     }
@@ -57,7 +200,8 @@ export default function TimetableGeneratorView({
       if (Number.isNaN(parsedMaxSlots) || parsedMaxSlots < 1) {
         setStatusFeedback({
           type: 'error',
-          message: 'Slot limit must be at least 1, or leave it blank to find the minimum slots automatically.',
+          message:
+            'Maximum slot limit must be at least 1, or leave it blank to find the minimum slots automatically.',
         });
         return;
       }
@@ -65,156 +209,356 @@ export default function TimetableGeneratorView({
 
     setIsGenerating(true);
     setStatusFeedback(null);
+    setConfigFeedback(null);
 
     try {
-      const result =
-        selectedAlgo === 'greedy'
-          ? await executeGreedyColoring(subjects, 'auto')
-          : await executeBacktrackingColoring(subjects, parsedMaxSlots, 'auto');
+      const result = await onGenerateTimetable({
+        algorithm: selectedAlgo,
+        maxSlots: parsedMaxSlots,
+        config: parsedConfigPayload,
+      });
 
-      if (!result.isValid || !result.assignments || Object.keys(result.assignments).length === 0) {
-        setStatusFeedback({
-          type: 'error',
-          message:
-            result.statusMessage ||
-            `Could not find a valid timetable with ${parsedMaxSlots} slot(s). Try leaving the slot limit blank.`,
-        });
-        return;
-      }
-
-      onTimetableGenerated(selectedAlgo, result);
+      const generated = result?.timetable;
+      setExpandedExamIds({});
       setStatusFeedback({
         type: 'success',
-        message: `Timetable generated using ${selectedAlgo === 'greedy' ? 'Greedy Coloring' : 'Backtracking Coloring'} (${result.numSlots} examination ${result.numSlots === 1 ? 'slot' : 'slots'}).`,
+        message: `Generated conflict-free timetable using ${
+          generated?.algorithmName || (selectedAlgo === 'greedy' ? 'Greedy Coloring' : 'Backtracking Coloring')
+        } (${generated?.numSlots ?? 0} examination ${
+          generated?.numSlots === 1 ? 'slot' : 'slots'
+        }, ${generated?.scheduledExams?.length ?? 0} scheduled exams).`,
       });
     } catch (err) {
       setStatusFeedback({
         type: 'error',
-        message: err?.message || 'Unable to generate timetable. Please check your data and try again.',
+        message:
+          err?.message ||
+          'Unable to generate examination timetable. Please verify exam configuration and classroom capacities.',
       });
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // Validate current assignments dynamically against current subjects
+  const toggleExamExpanded = (examKey) => {
+    setExpandedExamIds((prev) => ({
+      ...prev,
+      [examKey]: !prev[examKey],
+    }));
+  };
+
   const validation = useMemo(() => {
-    if (!timetableResult?.assignments || subjects.length === 0) {
-      return { isValid: false, violations: [], conflictingIds: new Set() };
+    if (!latestTimetable?.assignments || subjects.length === 0) {
+      return { isValid: true, violations: [] };
     }
-    const res = validateSchedule(subjects, timetableResult.assignments);
-    const conflictingIds = new Set();
-    for (const v of res.violations) {
-      if (v.subj1?.id) conflictingIds.add(v.subj1.id);
-      if (v.subj2?.id) conflictingIds.add(v.subj2.id);
-    }
-    return { ...res, conflictingIds };
-  }, [subjects, timetableResult]);
+    return validateSchedule(subjects, latestTimetable.assignments);
+  }, [subjects, latestTimetable]);
 
-  // Build sorted timetable rows ordered by slot number then subject code
-  const scheduledRows = useMemo(() => {
-    if (!timetableResult?.assignments) return [];
-    const assignments = timetableResult.assignments;
+  const scheduledExams = useMemo(() => {
+    return Array.isArray(latestTimetable?.scheduledExams)
+      ? latestTimetable.scheduledExams
+      : [];
+  }, [latestTimetable]);
 
-    return subjects
-      .filter((s) => Object.prototype.hasOwnProperty.call(assignments, s.id))
-      .map((s) => {
-        const slotIndex = assignments[s.id];
-        const palette = SLOT_PALETTES[slotIndex % SLOT_PALETTES.length];
-        const hasConflict = validation.conflictingIds.has(s.id);
-        return {
-          subject: s,
-          slotIndex,
-          slotLabel: `Slot ${slotIndex + 1}`,
-          palette,
-          hasConflict,
-        };
-      })
-      .sort((a, b) => {
-        if (a.slotIndex !== b.slotIndex) return a.slotIndex - b.slotIndex;
-        return a.subject.code.localeCompare(b.subject.code);
-      });
-  }, [subjects, timetableResult, validation]);
-
-  const unscheduledCount = useMemo(() => {
-    if (!timetableResult?.assignments) return 0;
-    return subjects.filter(
-      (s) => !Object.prototype.hasOwnProperty.call(timetableResult.assignments, s.id)
-    ).length;
-  }, [subjects, timetableResult]);
-
-  const activeAlgorithmLabel = useMemo(() => {
-    if (!timetableResult?.algorithmName) return 'None';
-    return timetableResult.algorithmName.includes('Backtracking')
-      ? 'Backtracking Coloring'
-      : 'Greedy Coloring';
-  }, [timetableResult]);
-
-  const handleDownloadCsv = () => {
-    if (scheduledRows.length === 0) return;
-
-    const header = [
-      'Examination Slot',
+  const handleExportCsv = () => {
+    if (!scheduledExams.length) return;
+    const headers = [
       'Subject Code',
       'Subject Name',
-      'Student Groups',
-      'Conflict Status',
+      'Exam Date',
+      'Start Time',
+      'End Time',
+      'Total Students',
+      'Classrooms Assigned Count',
+      'Classroom Breakdown',
     ];
-    const lines = [
-      header.join(','),
-      ...scheduledRows.map((row) =>
-        [
-          escapeCsvCell(row.slotLabel),
-          escapeCsvCell(row.subject.code),
-          escapeCsvCell(row.subject.name),
-          escapeCsvCell((row.subject.divisions || []).join('; ') || 'None'),
-          escapeCsvCell(row.hasConflict ? 'Conflict Detected' : 'Conflict-Free'),
-        ].join(',')
-      ),
-    ];
-
-    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const rows = scheduledExams.map((exam) => {
+      const breakdown = (exam.classroomAllocations || [])
+        .map(
+          (room) =>
+            `${room.classroomName} (${room.building}): ${room.allocatedStudents}/${room.capacity} seats, ${room.remainingSeats} remaining`
+        )
+        .join(' | ');
+      return [
+        escapeCsvCell(exam.subjectCode),
+        escapeCsvCell(exam.subjectName),
+        escapeCsvCell(exam.examDate),
+        escapeCsvCell(exam.startTime),
+        escapeCsvCell(exam.endTime),
+        escapeCsvCell(exam.totalStudents),
+        escapeCsvCell(exam.classroomsAssignedCount),
+        escapeCsvCell(breakdown),
+      ].join(',');
+    });
+    const csvContent = [headers.map(escapeCsvCell).join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = 'examia-timetable.csv';
-    document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   const hasBothComparisonRuns = Boolean(algoRuns?.greedy && algoRuns?.backtracking);
 
+  const activeAlgorithmLabel = latestTimetable?.algorithmName
+    ? latestTimetable.algorithmName.includes('Backtracking')
+      ? 'Backtracking Coloring'
+      : 'Greedy Coloring'
+    : selectedAlgo === 'greedy'
+      ? 'Greedy Coloring'
+      : 'Backtracking Coloring';
+
+  const totalScheduleSlotCapacity =
+    Math.max(0, parsedConfigPayload.numDays) *
+    Math.max(0, parsedConfigPayload.maxExamsPerDay);
+
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Page Title */}
-      <div className="no-print">
-        <h1 className="text-xl sm:text-2xl font-serif font-bold text-[#642F43] tracking-tight">
+    <div className="space-y-6 pb-8">
+      {/* Page Header */}
+      <header className="no-print space-y-1">
+        <h1 className="text-2xl sm:text-3xl font-serif font-bold tracking-tight text-[#642F43]">
           Timetable Generator
         </h1>
-        <p className="text-xs sm:text-sm text-[#6F4253] mt-0.5">
-          Choose an algorithm, generate a conflict-free timetable, and review the schedule.
+        <p className="text-sm text-[#6F4253]">
+          Configure examination timing, choose a graph coloring algorithm, generate date/time schedules with classroom seat allocation, and inspect conflict insights.
         </p>
-      </div>
+      </header>
 
-      {/* STEP 1 — CHOOSE AN ALGORITHM */}
+      {/* STEP 1 — EXAMINATION CONFIGURATION */}
       <section className="no-print card-premium p-4 sm:p-6 space-y-4">
-        <div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#7D5563]">
-            Step 1
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#7D5563]">
+              Step 1
+            </span>
+            <h2 className="text-base sm:text-lg font-serif font-bold text-[#642F43]">
+              Examination Configuration
+            </h2>
+          </div>
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#642F43] bg-[#FAF0F3] border border-[#C58E9B]/55 rounded-full px-3 py-1 self-start sm:self-auto">
+            <Calendar className="w-3.5 h-3.5" aria-hidden="true" />
+            Max Slot Window: {totalScheduleSlotCapacity} slots
           </span>
-          <h2 className="text-base sm:text-lg font-serif font-bold text-[#642F43]">
-            Choose an Algorithm
-          </h2>
         </div>
 
-        <div
-          role="radiogroup"
-          aria-label="Scheduling algorithm"
-          className="grid grid-cols-1 md:grid-cols-2 gap-3.5"
-        >
-          {/* Card 1: Greedy Coloring */}
+        <form onSubmit={handleSaveConfigClick} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            <div>
+              <label
+                htmlFor="cfg-start-date"
+                className="block text-xs font-bold text-[#642F43] mb-1.5"
+              >
+                Starting Date
+              </label>
+              <input
+                id="cfg-start-date"
+                type="date"
+                required
+                value={draftConfig.startDate}
+                onChange={(e) =>
+                  setDraftConfig((prev) => ({ ...prev, startDate: e.target.value }))
+                }
+                className="input-editorial w-full text-sm"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="cfg-daily-start-time"
+                className="block text-xs font-bold text-[#642F43] mb-1.5"
+              >
+                Daily Start Time
+              </label>
+              <input
+                id="cfg-daily-start-time"
+                type="time"
+                required
+                value={draftConfig.dailyStartTime}
+                onChange={(e) =>
+                  setDraftConfig((prev) => ({ ...prev, dailyStartTime: e.target.value }))
+                }
+                className="input-editorial w-full text-sm"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="cfg-exam-duration"
+                className="block text-xs font-bold text-[#642F43] mb-1.5"
+              >
+                Exam Duration (hours)
+              </label>
+              <input
+                id="cfg-exam-duration"
+                type="number"
+                min="0.25"
+                max="12"
+                step="0.25"
+                required
+                value={draftConfig.examDurationHours}
+                onChange={(e) =>
+                  setDraftConfig((prev) => ({ ...prev, examDurationHours: e.target.value }))
+                }
+                className="input-editorial w-full text-sm font-mono"
+              />
+              <span className="text-[11px] text-[#7D5563] mt-1 block">
+                {formatDurationBadge(parsedConfigPayload.examDurationMinutes)}
+              </span>
+            </div>
+
+            <div>
+              <label
+                htmlFor="cfg-break-duration"
+                className="block text-xs font-bold text-[#642F43] mb-1.5"
+              >
+                Break Between Exams (hours)
+              </label>
+              <input
+                id="cfg-break-duration"
+                type="number"
+                min="0"
+                max="8"
+                step="0.25"
+                required
+                value={draftConfig.breakDurationHours}
+                onChange={(e) =>
+                  setDraftConfig((prev) => ({ ...prev, breakDurationHours: e.target.value }))
+                }
+                className="input-editorial w-full text-sm font-mono"
+              />
+              <span className="text-[11px] text-[#7D5563] mt-1 block">
+                {formatDurationBadge(parsedConfigPayload.breakDurationMinutes)}
+              </span>
+            </div>
+
+            <div>
+              <label
+                htmlFor="cfg-num-days"
+                className="block text-xs font-bold text-[#642F43] mb-1.5"
+              >
+                Number of Exam Days
+              </label>
+              <input
+                id="cfg-num-days"
+                type="number"
+                min="1"
+                max="60"
+                required
+                value={draftConfig.numDays}
+                onChange={(e) =>
+                  setDraftConfig((prev) => ({ ...prev, numDays: e.target.value }))
+                }
+                className="input-editorial w-full text-sm font-mono"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="cfg-max-exams-day"
+                className="block text-xs font-bold text-[#642F43] mb-1.5"
+              >
+                Max Exams Per Day
+              </label>
+              <input
+                id="cfg-max-exams-day"
+                type="number"
+                min="1"
+                max="10"
+                required
+                value={draftConfig.maxExamsPerDay}
+                onChange={(e) =>
+                  setDraftConfig((prev) => ({ ...prev, maxExamsPerDay: e.target.value }))
+                }
+                className="input-editorial w-full text-sm font-mono"
+              />
+            </div>
+          </div>
+
+          {/* Live Daily Session Preview */}
+          <div className="p-3.5 rounded-2xl bg-[#FAF0F3]/85 border border-[#C58E9B]/45 space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-bold text-[#642F43] inline-flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" aria-hidden="true" />
+                Daily Session Timing Preview
+              </span>
+              <span className="text-[11px] text-[#7D5563]">
+                Starting {formatIsoDateDisplay(parsedConfigPayload.startDate)}
+              </span>
+            </div>
+
+            {sessionPreview.isValid ? (
+              <div className="flex flex-wrap gap-2">
+                {sessionPreview.sessions.map((session) => (
+                  <span
+                    key={session.sessionIndex}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-white border border-[#C58E9B]/60 text-[#361522]"
+                  >
+                    <strong className="text-[#642F43]">
+                      Session {session.sessionIndex}:
+                    </strong>{' '}
+                    {session.startTime} – {session.endTime}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs font-semibold text-[#642F43]">
+                {sessionPreview.error}
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <button
+              type="submit"
+              disabled={isSavingConfig}
+              className="btn-secondary w-full sm:w-auto px-4 py-2 text-xs sm:text-sm font-semibold inline-flex items-center justify-center gap-2 cursor-pointer"
+            >
+              {isSavingConfig && <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />}
+              Save Configuration
+            </button>
+
+            {configFeedback && (
+              <div
+                role="status"
+                className={`text-xs font-medium px-3 py-1.5 rounded-xl border ${
+                  configFeedback.type === 'error'
+                    ? 'bg-[#F8EAEF] border-[#642F43] text-[#4A1F30]'
+                    : 'bg-[#FAF0F3] border-[#C58E9B] text-[#642F43]'
+                }`}
+              >
+                {configFeedback.message}
+              </div>
+            )}
+          </div>
+        </form>
+      </section>
+
+      {/* STEP 2 — SELECT ALGORITHM */}
+      <section className="no-print card-premium p-4 sm:p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#7D5563]">
+              Step 2
+            </span>
+            <h2 className="text-base sm:text-lg font-serif font-bold text-[#642F43]">
+              Select Algorithm
+            </h2>
+          </div>
+          <span className="text-xs text-[#7D5563]">
+            {subjects.length} {subjects.length === 1 ? 'subject' : 'subjects'} ·{' '}
+            {graph.edgeCount} {graph.edgeCount === 1 ? 'conflict' : 'conflicts'} ·{' '}
+            {classrooms.length} {classrooms.length === 1 ? 'classroom' : 'classrooms'}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5" role="radiogroup" aria-label="Scheduling algorithm">
+          {/* Greedy Coloring */}
           <button
             type="button"
             role="radio"
@@ -228,7 +572,7 @@ export default function TimetableGeneratorView({
           >
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#F4E4E9] text-[#642F43]">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#F8EAEF] text-[#642F43] border border-[#C58E9B]/60">
                   <Zap className="w-3.5 h-3.5" aria-hidden="true" />
                   Fast approach
                 </span>
@@ -253,7 +597,7 @@ export default function TimetableGeneratorView({
             </div>
           </button>
 
-          {/* Card 2: Backtracking Coloring */}
+          {/* Backtracking Coloring */}
           <button
             type="button"
             role="radio"
@@ -293,7 +637,6 @@ export default function TimetableGeneratorView({
           </button>
         </div>
 
-        {/* Optional Slot Limit only when Backtracking is selected */}
         {selectedAlgo === 'backtracking' && (
           <div className="p-3.5 rounded-2xl bg-[#FAF0F3]/85 border border-[#C58E9B]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
@@ -320,7 +663,6 @@ export default function TimetableGeneratorView({
           </div>
         )}
 
-        {/* Small collapsible Learn how it works */}
         <details className="examia-details rounded-2xl bg-[#FAF0F3]/70 border border-[#C58E9B]/35 px-4 py-1.5">
           <summary className="examia-summary text-xs sm:text-sm font-semibold text-[#642F43]">
             <ChevronRight className="examia-chevron w-4 h-4 shrink-0" aria-hidden="true" />
@@ -329,28 +671,28 @@ export default function TimetableGeneratorView({
           <div className="pb-3 pt-1 text-xs text-[#6F4253] space-y-2 leading-relaxed border-t border-[#C58E9B]/25">
             <p>
               <strong className="text-[#361522]">Greedy Coloring (Welsh-Powell):</strong>{' '}
-              Ranks subjects by how many other subjects they conflict with and assigns each one the earliest free examination slot. It runs very fast, though slot count can vary with conflict order.
+              Ranks subjects by conflict degree and assigns the earliest available examination slot. Runs rapidly, though vertex ordering can affect total slot count.
             </p>
             <p>
               <strong className="text-[#361522]">Backtracking Coloring:</strong>{' '}
-              Explores slot assignments step by step and undoes choices whenever a conflict blocks remaining subjects, finding a valid minimal-slot schedule when run automatically.
+              Explores slot assignments recursively and undoes conflicting branches, guaranteeing the minimal valid slot count when run in Auto mode.
             </p>
           </div>
         </details>
       </section>
 
-      {/* STEP 2 — GENERATE TIMETABLE */}
+      {/* STEP 3 — GENERATE EXAMINATION TIMETABLE */}
       <section className="no-print card-premium p-4 sm:p-6 space-y-3.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-[#7D5563]">
-              Step 2
+              Step 3
             </span>
             <h2 className="text-base sm:text-lg font-serif font-bold text-[#642F43]">
-              Generate Timetable
+              Generate Examination Timetable
             </h2>
-            <p className="text-xs text-[#6F4253]">
-              Scheduling {subjects.length} {subjects.length === 1 ? 'subject' : 'subjects'} with {graph.edgeCount} detected conflict {graph.edgeCount === 1 ? 'pair' : 'pairs'}.
+            <p className="text-xs sm:text-sm text-[#6F4253]">
+              Builds conflict-free slots using <strong className="text-[#361522]">{selectedAlgo === 'greedy' ? 'Greedy Coloring' : 'Backtracking Coloring'}</strong>, assigns dates and times, and allocates available classrooms automatically.
             </p>
           </div>
 
@@ -358,82 +700,62 @@ export default function TimetableGeneratorView({
             type="button"
             onClick={handleGenerate}
             disabled={isGenerating}
-            className="btn-primary w-full sm:w-auto min-h-[48px] px-6 py-3 text-sm sm:text-base font-semibold flex items-center justify-center gap-2.5 shadow-[0_12px_24px_-6px_rgba(100,47,67,0.34)] disabled:opacity-65 cursor-pointer"
+            className="btn-primary w-full sm:w-auto px-6 py-3 text-sm font-semibold inline-flex items-center justify-center gap-2 shrink-0 cursor-pointer"
           >
             {isGenerating ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
-                <span>Generating Timetable...</span>
-              </>
+              <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
             ) : (
-              <>
-                <Sparkles className="w-4 h-4" aria-hidden="true" />
-                <span>Generate My Timetable</span>
-              </>
+              <Sparkles className="w-4 h-4" aria-hidden="true" />
             )}
+            <span>{isGenerating ? 'Generating…' : 'Generate Timetable'}</span>
           </button>
         </div>
 
         {statusFeedback && (
           <div
-            role={statusFeedback.type === 'error' ? 'alert' : 'status'}
-            className={`p-3.5 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs sm:text-sm font-medium ${
+            role="alert"
+            className={`p-3.5 rounded-2xl border flex items-start gap-2.5 text-xs sm:text-sm ${
               statusFeedback.type === 'error'
-                ? 'bg-[#FFF1F3] border-[#642F43]/40 text-[#4A1F30]'
-                : 'bg-[#F0FAF3] border-[#2E7D4F]/30 text-[#1B4D31]'
+                ? 'bg-[#F8EAEF] border-[#642F43] text-[#4A1F30]'
+                : 'bg-[#FAF0F3] border-[#C58E9B] text-[#642F43]'
             }`}
           >
-            <div className="flex items-center gap-2.5">
-              {statusFeedback.type === 'error' ? (
-                <AlertCircle className="w-4 h-4 shrink-0 text-[#642F43]" aria-hidden="true" />
-              ) : (
-                <CheckCircle2 className="w-4 h-4 shrink-0 text-[#2E7D4F]" aria-hidden="true" />
-              )}
-              <span>{statusFeedback.message}</span>
-            </div>
-
-            {subjects.length === 0 && onNavigateToManage && (
-              <button
-                type="button"
-                onClick={onNavigateToManage}
-                className="btn-secondary text-xs min-h-[36px] px-3 py-1.5 self-start sm:self-auto"
-              >
-                Open Manage Data
-              </button>
+            {statusFeedback.type === 'error' ? (
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-[#642F43]" aria-hidden="true" />
+            ) : (
+              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-[#642F43]" aria-hidden="true" />
             )}
+            <span className="font-medium leading-relaxed">{statusFeedback.message}</span>
           </div>
         )}
       </section>
 
-      {/* STEP 3 — VIEW YOUR TIMETABLE (Most Prominent Section) */}
-      <section
-        aria-label="Generated Examination Timetable"
-        className="rounded-[24px] border-2 border-[#642F43]/35 bg-[#FDF9FA] p-5 sm:p-7 shadow-[0_20px_42px_-12px_rgba(100,47,67,0.18)] space-y-5"
-      >
+      {/* STEP 4 — FINAL EXAMINATION RESULTS */}
+      <section className="card-premium p-4 sm:p-6 space-y-5" aria-label="Final examination results">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-[#7D5563]">
-              Step 3
+              Step 4
             </span>
-            <h2 className="text-xl sm:text-2xl font-serif font-bold text-[#642F43]">
-              View Your Timetable
+            <h2 className="text-lg sm:text-xl font-serif font-bold text-[#642F43]">
+              Final Examination Results
             </h2>
           </div>
 
-          {scheduledRows.length > 0 && (
+          {scheduledExams.length > 0 && (
             <div className="no-print flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={handleDownloadCsv}
-                className="btn-primary text-xs sm:text-sm min-h-[44px] px-4 py-2 flex items-center gap-2"
+                onClick={handleExportCsv}
+                className="btn-secondary px-3.5 py-2 text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 cursor-pointer"
               >
                 <Download className="w-4 h-4" aria-hidden="true" />
-                <span>Download Timetable</span>
+                <span>Export CSV</span>
               </button>
               <button
                 type="button"
-                onClick={() => window.print()}
-                className="btn-secondary text-xs sm:text-sm min-h-[44px] px-3.5 py-2 flex items-center gap-1.5"
+                onClick={handlePrint}
+                className="btn-secondary px-3.5 py-2 text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 cursor-pointer"
               >
                 <Printer className="w-4 h-4" aria-hidden="true" />
                 <span>Print</span>
@@ -442,270 +764,436 @@ export default function TimetableGeneratorView({
           )}
         </div>
 
-        {!timetableResult || scheduledRows.length === 0 ? (
-          <div className="p-8 rounded-2xl bg-[#FAF0F3]/85 border border-dashed border-[#C58E9B] text-center space-y-2.5">
-            <Sparkles className="w-8 h-8 text-[#C58E9B] mx-auto" aria-hidden="true" />
-            <p className="text-sm sm:text-base font-serif font-bold text-[#642F43]">
-              Your timetable will appear here
+        {!latestTimetable || scheduledExams.length === 0 ? (
+          <div className="p-6 sm:p-8 rounded-2xl bg-[#FAF0F3]/75 border border-dashed border-[#C58E9B]/60 text-center space-y-3">
+            <p className="text-sm font-medium text-[#642F43]">
+              No examination timetable generated yet.
             </p>
-            <p className="text-xs sm:text-sm text-[#6F4253] max-w-md mx-auto">
-              Select an algorithm above and click &ldquo;Generate My Timetable&rdquo; to assign every subject into conflict-free examination slots.
+            <p className="text-xs text-[#6F4253] max-w-md mx-auto">
+              Verify your subjects, student groups, enrolments, and classrooms in{' '}
+              <button
+                type="button"
+                onClick={onNavigateToManage}
+                className="font-semibold underline text-[#642F43] cursor-pointer"
+              >
+                Manage Data
+              </button>
+              , configure your exam schedule above, and click <strong>Generate Timetable</strong>.
             </p>
           </div>
         ) : (
           <>
-            {/* Stale notice if user modified subjects after generating */}
-            {(!validation.isValid || unscheduledCount > 0) && (
+            {/* Top Result Metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="p-3.5 rounded-2xl bg-[#FAF0F3] border border-[#C58E9B]/45">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#7D5563] block">
+                  Total Scheduled Exams
+                </span>
+                <span className="text-2xl font-serif font-bold text-[#642F43]">
+                  {scheduledExams.length}
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-[#FAF0F3] border border-[#C58E9B]/45">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#7D5563] block">
+                  Time Slots Used
+                </span>
+                <span className="text-2xl font-serif font-bold text-[#642F43]">
+                  {latestTimetable.numSlots}
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-[#FAF0F3] border border-[#C58E9B]/45">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#7D5563] block">
+                  Selected Algorithm
+                </span>
+                <span className="text-lg font-serif font-bold text-[#642F43] block mt-0.5">
+                  {activeAlgorithmLabel}
+                </span>
+              </div>
+            </div>
+
+            {!validation.isValid && (
               <div
                 role="alert"
-                className="no-print p-3.5 rounded-2xl bg-[#FFF1F3] border border-[#642F43]/40 text-xs sm:text-sm font-medium text-[#4A1F30] flex items-center gap-2.5"
+                className="p-3.5 rounded-2xl bg-[#F8EAEF] border border-[#642F43] text-[#4A1F30] text-xs sm:text-sm font-medium flex items-start gap-2"
               >
-                <AlertCircle className="w-4 h-4 shrink-0 text-[#642F43]" aria-hidden="true" />
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-[#642F43]" aria-hidden="true" />
                 <span>
-                  Your subject or enrolment data changed after this timetable was generated. Click &ldquo;Generate My Timetable&rdquo; to refresh slot assignments.
+                  Data changed since this timetable was generated. Click <strong>Generate Timetable</strong> to recompute date/time slots and classroom seating.
                 </span>
               </div>
             )}
 
-            {/* Key Summary Values Above the Table */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="p-4 rounded-2xl bg-[#FAF0F3] border border-[#C58E9B]/45">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-[#6F4253]">
-                  Total subjects scheduled
-                </p>
-                <p className="text-2xl font-serif font-bold text-[#642F43] mt-1">
-                  {scheduledRows.length}
-                </p>
-              </div>
+            {/* Honest allocation-basis notice */}
+            <p className="text-xs text-[#6F4253] bg-[#FAF0F3]/80 border border-[#C58E9B]/35 rounded-xl px-3.5 py-2.5">
+              <strong className="text-[#642F43]">Group-level count allocation:</strong>{' '}
+              Student totals are calculated by summing distinct enrolled student groups per subject. Expand any row to inspect exact classroom capacity breakdown and remaining seats.
+            </p>
 
-              <div className="p-4 rounded-2xl bg-[#FAF0F3] border border-[#C58E9B]/45">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-[#6F4253]">
-                  Total examination slots used
-                </p>
-                <p className="text-2xl font-serif font-bold text-[#642F43] mt-1">
-                  {timetableResult.numSlots}
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-[#FAF0F3] border border-[#C58E9B]/45">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-[#6F4253]">
-                  Selected algorithm
-                </p>
-                <p className="text-lg sm:text-xl font-serif font-bold text-[#642F43] mt-1">
-                  {activeAlgorithmLabel}
-                </p>
-              </div>
-            </div>
-
-            {/* Clean Responsive Table (Desktop & Print) */}
-            <div className="hidden md:block print:block overflow-x-auto rounded-2xl border border-[#C58E9B]/45">
+            {/* Desktop Schedule Table */}
+            <div className="hidden md:block overflow-x-auto rounded-2xl border border-[#C58E9B]/40">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-[#642F43] text-[#FDF8FA] text-xs uppercase tracking-wider">
-                    <th className="py-3.5 px-4 font-bold">Examination Slot</th>
-                    <th className="py-3.5 px-4 font-bold">Subject Name</th>
-                    <th className="py-3.5 px-4 font-bold">Subject Code</th>
-                    <th className="py-3.5 px-4 font-bold">Conflict-Free Status</th>
+                  <tr className="bg-[#F4E4E9] text-[#642F43] text-xs uppercase tracking-wider border-b border-[#C58E9B]/40">
+                    <th className="py-3 px-4 font-bold">Subject</th>
+                    <th className="py-3 px-4 font-bold">Exam Date & Time</th>
+                    <th className="py-3 px-4 font-bold">Total Students</th>
+                    <th className="py-3 px-4 font-bold">Assigned Classrooms</th>
+                    <th className="py-3 px-4 font-bold text-right">Room Breakdown</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#EED8DF] text-sm bg-white">
-                  {scheduledRows.map((row) => (
-                    <tr key={row.subject.id} className="hover:bg-[#FAF0F3]/75 transition-colors">
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span
-                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border"
-                          style={{
-                            backgroundColor: row.palette.badgeBg,
-                            borderColor: row.palette.badgeBorder,
-                            color: row.palette.textColor,
-                          }}
-                        >
-                          {row.slotLabel}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 font-semibold text-[#361522]">
-                        <span>{row.subject.name}</span>
-                        {row.subject.divisions?.length > 0 && (
-                          <span className="block text-[11px] font-normal text-[#7D5563] mt-0.5">
-                            Groups: {row.subject.divisions.join(', ')}
-                          </span>
+                <tbody className="divide-y divide-[#EED8DF] bg-white">
+                  {scheduledExams.map((exam) => {
+                    const palette = SLOT_PALETTES[exam.slotIndex % SLOT_PALETTES.length];
+                    const rowKey = String(exam.subjectId || exam.id || exam.subjectCode);
+                    const isExpanded = Boolean(expandedExamIds[rowKey]);
+                    const rooms = exam.classroomAllocations || [];
+                    return (
+                      <React.Fragment key={rowKey}>
+                        <tr className="hover:bg-[#FDF8FA] transition-colors">
+                          <td className="py-3.5 px-4 align-top">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border"
+                                style={{
+                                  backgroundColor: palette.badgeBg,
+                                  color: palette.textColor,
+                                  borderColor: palette.badgeBorder,
+                                }}
+                              >
+                                Slot {exam.slotIndex + 1}
+                              </span>
+                              <span className="font-mono text-xs font-bold text-[#642F43]">
+                                {exam.subjectCode}
+                              </span>
+                            </div>
+                            <p className="font-semibold text-sm text-[#361522] mt-1">
+                              {exam.subjectName}
+                            </p>
+                          </td>
+
+                          <td className="py-3.5 px-4 align-top">
+                            <p className="text-sm font-semibold text-[#361522]">
+                              {formatIsoDateDisplay(exam.examDate)}
+                            </p>
+                            <p className="text-xs font-mono text-[#6F4253] mt-0.5">
+                              {exam.startTime} – {exam.endTime}
+                            </p>
+                          </td>
+
+                          <td className="py-3.5 px-4 align-top">
+                            <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[#361522]">
+                              <Users className="w-3.5 h-3.5 text-[#642F43]" aria-hidden="true" />
+                              {exam.totalStudents}
+                            </span>
+                            {(exam.enrolledGroups || []).length > 0 && (
+                              <p className="text-[11px] text-[#7D5563] mt-0.5">
+                                {exam.enrolledGroups.join(', ')}
+                              </p>
+                            )}
+                          </td>
+
+                          <td className="py-3.5 px-4 align-top">
+                            <p className="text-xs font-bold text-[#642F43] mb-1">
+                              {exam.classroomsAssignedCount}{' '}
+                              {exam.classroomsAssignedCount === 1 ? 'classroom' : 'classrooms'}
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {rooms.map((room) => (
+                                <span
+                                  key={room.id || room.classroomName}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-[#FAF0F3] text-[#642F43] border border-[#C58E9B]/50"
+                                >
+                                  <Building2 className="w-3 h-3" aria-hidden="true" />
+                                  {room.classroomName} ({room.allocatedStudents}/{room.capacity})
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+
+                          <td className="py-3.5 px-4 align-top text-right">
+                            <button
+                              type="button"
+                              aria-expanded={isExpanded}
+                              onClick={() => toggleExamExpanded(rowKey)}
+                              className="btn-secondary px-3 py-1.5 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
+                            >
+                              {isExpanded ? (
+                                <>
+                                  <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
+                                  Hide Rooms
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
+                                  View Rooms
+                                </>
+                              )}
+                            </button>
+                          </td>
+                        </tr>
+
+                        {isExpanded && (
+                          <tr className="bg-[#FDF9FA]">
+                            <td colSpan={5} className="px-4 py-3 border-t border-[#EED8DF]">
+                              <div className="rounded-xl border border-[#C58E9B]/45 bg-white overflow-hidden">
+                                <table className="w-full text-left border-collapse text-xs">
+                                  <thead>
+                                    <tr className="bg-[#FAF0F3] text-[#642F43] uppercase tracking-wider border-b border-[#EED8DF]">
+                                      <th className="py-2 px-3 font-bold">Classroom</th>
+                                      <th className="py-2 px-3 font-bold">Building</th>
+                                      <th className="py-2 px-3 font-bold">Allocated Students</th>
+                                      <th className="py-2 px-3 font-bold">Capacity</th>
+                                      <th className="py-2 px-3 font-bold">Remaining Available Seats</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-[#F4E4E9]">
+                                    {rooms.map((room) => (
+                                      <tr key={room.id || room.classroomId || room.classroomName}>
+                                        <td className="py-2 px-3 font-semibold text-[#361522]">
+                                          {room.classroomName}
+                                        </td>
+                                        <td className="py-2 px-3 text-[#6F4253]">
+                                          {room.building}
+                                        </td>
+                                        <td className="py-2 px-3 font-mono font-bold text-[#642F43]">
+                                          {room.allocatedStudents}
+                                        </td>
+                                        <td className="py-2 px-3 font-mono text-[#361522]">
+                                          {room.capacity}
+                                        </td>
+                                        <td className="py-2 px-3 font-mono text-[#6F4253]">
+                                          {room.remainingSeats}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </td>
+                          </tr>
                         )}
-                      </td>
-                      <td className="py-3.5 px-4 font-mono font-bold text-[#642F43] whitespace-nowrap">
-                        {row.subject.code}
-                      </td>
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        {row.hasConflict ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#FFF1F3] text-[#4A1F30] border border-[#642F43]/40">
-                            <AlertCircle className="w-3.5 h-3.5" aria-hidden="true" />
-                            <span>Conflict Detected</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#F0FAF3] text-[#1B4D31] border border-[#2E7D4F]/30">
-                            <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
-                            <span>Conflict-Free</span>
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                      </React.Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
-            {/* Clean Mobile Timetable Cards (< md) */}
-            <div className="md:hidden print:hidden space-y-2.5">
-              {scheduledRows.map((row) => (
-                <div
-                  key={row.subject.id}
-                  className="p-4 rounded-2xl bg-white border border-[#C58E9B]/45 space-y-2.5 shadow-xs"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span
-                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border"
-                      style={{
-                        backgroundColor: row.palette.badgeBg,
-                        borderColor: row.palette.badgeBorder,
-                        color: row.palette.textColor,
-                      }}
-                    >
-                      {row.slotLabel}
-                    </span>
-
-                    {row.hasConflict ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#FFF1F3] text-[#4A1F30] border border-[#642F43]/40">
-                        <AlertCircle className="w-3 h-3" aria-hidden="true" />
-                        <span>Conflict</span>
+            {/* Mobile Exam Cards */}
+            <div className="md:hidden space-y-3">
+              {scheduledExams.map((exam) => {
+                const palette = SLOT_PALETTES[exam.slotIndex % SLOT_PALETTES.length];
+                const cardKey = String(exam.subjectId || exam.id || exam.subjectCode);
+                const isExpanded = Boolean(expandedExamIds[cardKey]);
+                const rooms = exam.classroomAllocations || [];
+                return (
+                  <article
+                    key={cardKey}
+                    className="p-3.5 rounded-2xl bg-[#FAF0F3]/85 border border-[#C58E9B]/45 space-y-2.5"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border"
+                            style={{
+                              backgroundColor: palette.badgeBg,
+                              color: palette.textColor,
+                              borderColor: palette.badgeBorder,
+                            }}
+                          >
+                            Slot {exam.slotIndex + 1}
+                          </span>
+                          <span className="font-mono text-xs font-bold text-[#642F43]">
+                            {exam.subjectCode}
+                          </span>
+                        </div>
+                        <h3 className="text-sm font-serif font-bold text-[#361522] mt-1">
+                          {exam.subjectName}
+                        </h3>
+                      </div>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-white border border-[#C58E9B]/55 text-[#642F43] shrink-0">
+                        <Users className="w-3 h-3" aria-hidden="true" />
+                        {exam.totalStudents}
                       </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#F0FAF3] text-[#1B4D31] border border-[#2E7D4F]/30">
-                        <CheckCircle2 className="w-3 h-3" aria-hidden="true" />
-                        <span>Conflict-Free</span>
-                      </span>
-                    )}
-                  </div>
+                    </div>
 
-                  <div>
-                    <span className="font-mono text-xs font-bold text-[#642F43]">
-                      {row.subject.code}
-                    </span>
-                    <h3 className="text-sm font-bold text-[#361522]">
-                      {row.subject.name}
-                    </h3>
-                    {row.subject.divisions?.length > 0 && (
-                      <p className="text-xs text-[#6F4253] mt-0.5">
-                        Groups: {row.subject.divisions.join(', ')}
+                    <div className="text-xs text-[#6F4253] space-y-1">
+                      <p>
+                        <strong className="text-[#361522]">Date & Time:</strong>{' '}
+                        {formatIsoDateDisplay(exam.examDate)} · {exam.startTime} – {exam.endTime}
                       </p>
+                      <p>
+                        <strong className="text-[#361522]">Classrooms ({exam.classroomsAssignedCount}):</strong>{' '}
+                        {rooms.map((r) => `${r.classroomName} (${r.allocatedStudents}/${r.capacity})`).join(', ')}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      aria-expanded={isExpanded}
+                      onClick={() => toggleExamExpanded(cardKey)}
+                      className="btn-secondary w-full py-2 text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      {isExpanded ? (
+                        <>
+                          <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
+                          Hide Classroom Breakdown
+                        </>
+                      ) : (
+                        <>
+                          <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
+                          View Classroom Breakdown
+                        </>
+                      )}
+                    </button>
+
+                    {isExpanded && (
+                      <div className="space-y-2 pt-1">
+                        {rooms.map((room) => (
+                          <div
+                            key={room.id || room.classroomId || room.classroomName}
+                            className="p-2.5 rounded-xl bg-white border border-[#C58E9B]/45 text-xs space-y-1"
+                          >
+                            <div className="flex items-center justify-between gap-2 font-semibold text-[#361522]">
+                              <span>{room.classroomName}</span>
+                              <span className="text-[11px] text-[#7D5563]">{room.building}</span>
+                            </div>
+                            <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#6F4253] font-mono">
+                              <span>Allocated: {room.allocatedStudents}</span>
+                              <span>Capacity: {room.capacity}</span>
+                              <span>Remaining: {room.remainingSeats}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     )}
-                  </div>
-                </div>
-              ))}
+                  </article>
+                );
+              })}
             </div>
           </>
         )}
       </section>
 
-      {/* STEP 4 — UNDERSTAND THE RESULTS (Collapsible Accordions) */}
-      <section className="no-print space-y-3" aria-label="Understand the results">
+      {/* STEP 5 — DAA ALGORITHM VISUALISATION */}
+      <section className="no-print space-y-3" aria-label="Algorithm visualisation">
         <div className="px-1">
           <span className="text-[11px] font-bold uppercase tracking-wider text-[#7D5563]">
-            Step 4
+            Step 5
           </span>
           <h2 className="text-base sm:text-lg font-serif font-bold text-[#642F43]">
-            Understand the Results
+            DAA Algorithm Visualisation
           </h2>
         </div>
 
-        {/* A. Conflict Graph */}
+        {/* Conflict Graph Section */}
         <details className="examia-details card-premium px-4 sm:px-6 py-2">
           <summary className="examia-summary text-sm sm:text-base font-serif font-bold text-[#642F43]">
             <ChevronRight className="examia-chevron w-4 h-4 shrink-0" aria-hidden="true" />
-            <span>A. Conflict Graph</span>
+            <span>Conflict Graph</span>
           </summary>
 
           <div className="pb-4 pt-2 space-y-4 border-t border-[#C58E9B]/25">
-            <ul className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-xs text-[#6F4253]">
+            <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs text-[#6F4253]">
               <li className="p-3 rounded-xl bg-[#FAF0F3]/80 border border-[#C58E9B]/30">
-                <strong className="text-[#361522] block mb-0.5">Vertices (Nodes)</strong>
-                Each node represents an examination subject.
+                <strong className="text-[#361522] block mb-0.5">Vertices (Subjects)</strong>
+                Each vertex represents a scheduled examination subject.
               </li>
               <li className="p-3 rounded-xl bg-[#FAF0F3]/80 border border-[#C58E9B]/30">
-                <strong className="text-[#361522] block mb-0.5">Edges (Lines)</strong>
-                Connected subjects share a student group and cannot share the same slot.
+                <strong className="text-[#361522] block mb-0.5">Edges (Shared Groups)</strong>
+                Edges connect subjects sharing any enrolled student group.
               </li>
               <li className="p-3 rounded-xl bg-[#FAF0F3]/80 border border-[#C58E9B]/30">
-                <strong className="text-[#361522] block mb-0.5">Colors</strong>
-                Different colors denote different examination time slots.
+                <strong className="text-[#361522] block mb-0.5">Colors (Exam Slots)</strong>
+                Distinct colors denote separate non-conflicting time slots.
+              </li>
+              <li className="p-3 rounded-xl bg-[#FAF0F3]/80 border border-[#C58E9B]/30">
+                <strong className="text-[#361522] block mb-0.5">Greedy vs Backtracking</strong>
+                Greedy assigns first-free slots fast; Backtracking seeks minimal valid slots.
               </li>
             </ul>
 
             <ConflictGraphCanvas
               graph={graph}
-              assignments={timetableResult?.assignments || {}}
+              assignments={latestTimetable?.assignments || {}}
               title="Subject Conflict Network"
             />
           </div>
         </details>
 
-        {/* B. Algorithm Details */}
+        {/* Algorithm Information Section */}
         <details className="examia-details card-premium px-4 sm:px-6 py-2">
           <summary className="examia-summary text-sm sm:text-base font-serif font-bold text-[#642F43]">
             <ChevronRight className="examia-chevron w-4 h-4 shrink-0" aria-hidden="true" />
-            <span>B. Algorithm Details</span>
+            <span>Algorithm Information</span>
           </summary>
 
           <div className="pb-4 pt-2 space-y-4 border-t border-[#C58E9B]/25 text-xs sm:text-sm text-[#6F4253]">
-            {!timetableResult ? (
+            {!latestTimetable ? (
               <p>
-                Generate a timetable above to inspect measured slot counts, execution timing, and conflict validation.
+                Generate an examination timetable above to inspect live algorithm metrics, conflict validation, and Greedy vs. Backtracking comparison.
               </p>
             ) : (
               <>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                  <div className="p-3.5 rounded-xl bg-[#FAF0F3]/80 border border-[#C58E9B]/35">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="p-3 rounded-xl bg-[#FAF0F3]/85 border border-[#C58E9B]/35">
                     <span className="text-[11px] uppercase tracking-wider font-semibold text-[#7D5563] block">
-                      Slots Used
+                      Algorithm
                     </span>
-                    <span className="text-lg font-serif font-bold text-[#642F43]">
-                      {timetableResult.numSlots}
+                    <span className="text-sm font-serif font-bold text-[#642F43] mt-0.5 block">
+                      {activeAlgorithmLabel}
                     </span>
                   </div>
 
-                  <div className="p-3.5 rounded-xl bg-[#FAF0F3]/80 border border-[#C58E9B]/35">
+                  <div className="p-3 rounded-xl bg-[#FAF0F3]/85 border border-[#C58E9B]/35">
+                    <span className="text-[11px] uppercase tracking-wider font-semibold text-[#7D5563] block">
+                      Subjects
+                    </span>
+                    <span className="text-lg font-serif font-bold text-[#642F43]">
+                      {subjects.length}
+                    </span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-[#FAF0F3]/85 border border-[#C58E9B]/35">
+                    <span className="text-[11px] uppercase tracking-wider font-semibold text-[#7D5563] block">
+                      Conflicts
+                    </span>
+                    <span className="text-lg font-serif font-bold text-[#642F43]">
+                      {graph.edgeCount}
+                    </span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-[#FAF0F3]/85 border border-[#C58E9B]/35">
+                    <span className="text-[11px] uppercase tracking-wider font-semibold text-[#7D5563] block">
+                      Time Slots Used
+                    </span>
+                    <span className="text-lg font-serif font-bold text-[#642F43]">
+                      {latestTimetable.numSlots}
+                    </span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-[#FAF0F3]/85 border border-[#C58E9B]/35">
                     <span className="text-[11px] uppercase tracking-wider font-semibold text-[#7D5563] block">
                       Execution Time
                     </span>
-                    <span className="text-lg font-mono font-bold text-[#642F43]">
-                      {Number(timetableResult.executionTimeMs ?? 0).toFixed(3)} ms
+                    <span className="text-base font-mono font-bold text-[#642F43]">
+                      {Number(latestTimetable.executionTimeMs ?? 0).toFixed(3)} ms
                     </span>
                   </div>
 
-                  <div className="p-3.5 rounded-xl bg-[#FAF0F3]/80 border border-[#C58E9B]/35">
+                  <div className="p-3 rounded-xl bg-[#FAF0F3]/85 border border-[#C58E9B]/35">
                     <span className="text-[11px] uppercase tracking-wider font-semibold text-[#7D5563] block">
-                      Steps / Calls
+                      Valid Status
                     </span>
-                    <span className="text-lg font-mono font-bold text-[#642F43]">
-                      {timetableResult.recursiveCalls ?? timetableResult.operationsCount ?? '—'}
-                    </span>
-                  </div>
-
-                  <div className="p-3.5 rounded-xl bg-[#FAF0F3]/80 border border-[#C58E9B]/35">
-                    <span className="text-[11px] uppercase tracking-wider font-semibold text-[#7D5563] block">
-                      Validation
-                    </span>
-                    <span className="text-sm font-bold text-[#1B4D31] block mt-0.5">
-                      {validation.isValid ? 'Valid Coloring' : 'Needs Re-run'}
+                    <span className="text-sm font-bold text-[#642F43] block mt-0.5">
+                      {validation.isValid && latestTimetable.isValid ? 'Conflict-Free' : 'Needs Re-run'}
                     </span>
                   </div>
                 </div>
 
-                <p className="text-xs leading-relaxed">
-                  {activeAlgorithmLabel === 'Greedy Coloring'
-                    ? 'Greedy Coloring orders subjects by conflict degree and assigns the earliest available slot. It prioritizes speed and produces a valid timetable, though vertex ordering can sometimes use slightly more slots than the theoretical minimum.'
-                    : 'Backtracking Coloring explores valid slot assignments recursively and undoes conflicting choices, confirming a valid coloring (and finding the minimum number of slots when run automatically).'}
-                </p>
-
-                {/* Side-by-side comparison table shown once BOTH algorithms have been executed */}
                 {hasBothComparisonRuns ? (
                   <div className="space-y-2 pt-1">
                     <h3 className="text-sm font-serif font-bold text-[#642F43]">
@@ -716,8 +1204,8 @@ export default function TimetableGeneratorView({
                         <thead>
                           <tr className="bg-[#F4E4E9] text-[#642F43] text-xs uppercase tracking-wider border-b border-[#C58E9B]/40">
                             <th className="py-2.5 px-3.5 font-bold">Algorithm</th>
-                            <th className="py-2.5 px-3.5 font-bold">Slots Used</th>
-                            <th className="py-2.5 px-3.5 font-bold">Time (ms)</th>
+                            <th className="py-2.5 px-3.5 font-bold">Time Slots Used</th>
+                            <th className="py-2.5 px-3.5 font-bold">Execution Time</th>
                             <th className="py-2.5 px-3.5 font-bold">Operations / Calls</th>
                             <th className="py-2.5 px-3.5 font-bold">Status</th>
                           </tr>
@@ -736,7 +1224,7 @@ export default function TimetableGeneratorView({
                             <td className="py-2.5 px-3.5 font-mono">
                               {algoRuns.greedy.operationsCount ?? '—'} ops
                             </td>
-                            <td className="py-2.5 px-3.5 font-semibold text-[#1B4D31]">
+                            <td className="py-2.5 px-3.5 font-semibold text-[#642F43]">
                               {algoRuns.greedy.isValid ? 'Conflict-Free' : 'Invalid'}
                             </td>
                           </tr>
@@ -751,9 +1239,9 @@ export default function TimetableGeneratorView({
                               {Number(algoRuns.backtracking.executionTimeMs ?? 0).toFixed(3)} ms
                             </td>
                             <td className="py-2.5 px-3.5 font-mono">
-                              {algoRuns.backtracking.recursiveCalls ?? algoRuns.backtracking.operationsCount ?? '—'} calls
+                              {algoRuns.backtracking.operationsCount ?? '—'} calls
                             </td>
-                            <td className="py-2.5 px-3.5 font-semibold text-[#1B4D31]">
+                            <td className="py-2.5 px-3.5 font-semibold text-[#642F43]">
                               {algoRuns.backtracking.isValid ? 'Valid Optimal' : 'Invalid'}
                             </td>
                           </tr>
@@ -763,7 +1251,7 @@ export default function TimetableGeneratorView({
                   </div>
                 ) : (
                   <p className="text-xs italic text-[#7D5563]">
-                    Tip: Run both Greedy Coloring and Backtracking Coloring on this dataset to unlock a side-by-side comparison table here.
+                    Tip: Execute both Greedy Coloring and Backtracking Coloring on this dataset to display the live comparison table here.
                   </p>
                 )}
               </>
@@ -774,4 +1262,3 @@ export default function TimetableGeneratorView({
     </div>
   );
 }
-
