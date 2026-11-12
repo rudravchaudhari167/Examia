@@ -182,22 +182,14 @@ export default function Topbar({
 
   const getPageMeta = (tab) => {
     switch (tab) {
-      case 'overview':
-        return { title: 'Overview Workspace', breadcrumb: 'Examia / Dashboard' };
-      case 'subjects':
-        return { title: 'Subject Management', breadcrumb: 'Examia / Curricular Data / Subjects' };
-      case 'divisions':
-        return { title: 'Student Divisions', breadcrumb: 'Examia / Enrolments / Divisions' };
-      case 'graph':
-        return { title: 'Conflict Graph Analysis', breadcrumb: 'Examia / Mathematical Graph / G=(V,E)' };
-      case 'generate':
-        return { title: 'Generate Timetable', breadcrumb: 'Examia / Timetable / Generator' };
-      case 'comparison':
-        return { title: 'Algorithm Comparison', breadcrumb: 'Examia / DAA Benchmarks / Greedy vs Backtracking' };
-      case 'schedule':
-        return { title: 'Final Examination Schedule', breadcrumb: 'Examia / Timetable / Verified Schedule' };
+      case 'dashboard':
+        return { title: 'Dashboard', breadcrumb: 'Examia / Dashboard' };
+      case 'manage':
+        return { title: 'Manage Data', breadcrumb: 'Examia / Manage Data' };
+      case 'generator':
+        return { title: 'Timetable Generator', breadcrumb: 'Examia / Timetable Generator' };
       default:
-        return { title: 'Workspace', breadcrumb: 'Examia' };
+        return { title: 'Dashboard', breadcrumb: 'Examia' };
     }
   };
 
@@ -303,7 +295,7 @@ export default function Topbar({
                     <div className="p-2.5 rounded-xl clay-inset">
                       <p className="font-semibold text-[#361522]">Conflict Detection Active</p>
                       <p className="text-[11px] text-[#6F4253] mt-0.5">
-                        Edges automatically recalculate upon any change to student divisions.
+                        Conflicts automatically recalculate whenever subject enrolments or student groups change.
                       </p>
                     </div>
                   </div>

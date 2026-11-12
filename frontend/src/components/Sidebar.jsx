@@ -1,25 +1,17 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { 
-  LayoutDashboard, BookOpen, Users, Share2, 
-  Sparkles, GitCompare, CalendarCheck, Settings, 
-  Info, ChevronRight
+  LayoutDashboard, Layers, Sparkles, ChevronRight
 } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { id: 'subjects', label: 'Subjects', icon: BookOpen },
-  { id: 'divisions', label: 'Student Divisions', icon: Users },
-  { id: 'graph', label: 'Conflict Graph', icon: Share2 },
-  { id: 'generate', label: 'Generate Timetable', icon: Sparkles },
-  { id: 'comparison', label: 'Algorithm Comparison', icon: GitCompare },
-  { id: 'schedule', label: 'Final Schedule', icon: CalendarCheck }
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'manage', label: 'Manage Data', icon: Layers },
+  { id: 'generator', label: 'Timetable Generator', icon: Sparkles }
 ];
 
 export default function Sidebar({ 
   activeTab, 
-  setActiveTab, 
-  onOpenSettings,
-  onOpenAbout
+  setActiveTab
 }) {
   const navRef = useRef(null);
   const buttonRefs = useRef({});
@@ -122,9 +114,9 @@ export default function Sidebar({
               </div>
             </div>
             <div>
-              <h1 className="font-serif font-bold text-xl tracking-tight text-[#642F43] flex items-center gap-1.5">
+              <span className="font-serif font-bold text-xl tracking-tight text-[#642F43] flex items-center gap-1.5">
                 examia.
-              </h1>
+              </span>
               <p className="text-[10px] uppercase font-semibold tracking-wider text-[#6F4253]">
                 Academic Intelligence Platform
               </p>
@@ -193,26 +185,9 @@ export default function Sidebar({
       </div>
 
       {/* Footer / Meta section */}
-      <div className="m-3 p-3.5 rounded-2xl border border-[#C58E9B]/45 space-y-1.5 bg-[#F4E4E9] shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
-        <button
-          type="button"
-          onClick={onOpenSettings}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-[#361522] border border-transparent hover:bg-[#FDF9FA] hover:border-[#C58E9B]/40 hover:text-[#642F43] transition-[background-color,color,border-color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] cursor-pointer"
-        >
-          <Settings className="w-4 h-4 text-[#642F43]" />
-          <span>System Settings & Rooms</span>
-        </button>
-        <button
-          type="button"
-          onClick={onOpenAbout}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-[#361522] border border-transparent hover:bg-[#FDF9FA] hover:border-[#C58E9B]/40 hover:text-[#642F43] transition-[background-color,color,border-color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] cursor-pointer"
-        >
-          <Info className="w-4 h-4 text-[#642F43]" />
-          <span>DAA Project Architecture</span>
-        </button>
-
-        <div className="pt-2 px-3 flex items-center justify-between text-[11px] text-[#6F4253]">
-          <span>examia. v1.0</span>
+      <div className="m-3 p-3.5 rounded-2xl border border-[#C58E9B]/45 bg-[#F4E4E9] shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
+        <div className="px-1 flex items-center justify-between text-[11px] text-[#6F4253]">
+          <span className="font-semibold">examia. v1.0</span>
           <span className="font-mono text-[10px] bg-[#642F43] border border-[#4A1F30] px-2 py-0.5 rounded-full text-[#FDF8FA]">DAA 2026</span>
         </div>
       </div>
