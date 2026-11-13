@@ -430,8 +430,50 @@ function TimetableGeneratorView({
       : [];
   }, [latestTimetable]);
 
+  const enrichedScheduledExams = useMemo(() => {
+    if (!scheduledExams.length) return [];
+
+    const countPerSlot = {};
+    for (const exam of scheduledExams) {
+      const s = exam.slotIndex ?? 0;
+      countPerSlot[s] = (countPerSlot[s] || 0) + 1;
+    }
+
+    const letterCounters = {};
+    return scheduledExams.map((exam) => {
+      const s = exam.slotIndex ?? 0;
+      const totalInSlot = exam.totalInSlot ?? countPerSlot[s] ?? 1;
+      const isParallel = exam.isParallel ?? totalInSlot > 1;
+      let subSlotCode = exam.subSlotCode || '';
+      let slotLabel = exam.slotLabel;
+
+      if (!slotLabel) {
+        if (isParallel) {
+          const idx = letterCounters[s] || 0;
+          letterCounters[s] = idx + 1;
+          subSlotCode = String.fromCharCode(65 + (idx % 26));
+          slotLabel = `Slot ${s + 1}${subSlotCode}`;
+        } else {
+          slotLabel = `Slot ${s + 1}`;
+        }
+      }
+
+      return {
+        ...exam,
+        slotLabel,
+        isParallel,
+        subSlotCode,
+        totalInSlot,
+      };
+    });
+  }, [scheduledExams]);
+
+  const hasParallelExams = useMemo(() => {
+    return enrichedScheduledExams.some((exam) => exam.isParallel);
+  }, [enrichedScheduledExams]);
+
   const handleExportCsv = () => {
-    if (!scheduledExams.length) return;
+    if (!enrichedScheduledExams.length) return;
     const headers = [
       'Slot',
       'Subject Code',
@@ -443,7 +485,7 @@ function TimetableGeneratorView({
       'Classrooms Assigned Count',
       'Classroom Allocations',
     ];
-    const rows = scheduledExams.map((exam) => {
+    const rows = enrichedScheduledExams.map((exam) => {
       const breakdown = (exam.classroomAllocations || [])
         .map(
           (room) =>
@@ -451,7 +493,7 @@ function TimetableGeneratorView({
         )
         .join(' | ');
       return [
-        escapeCsvCell(`Slot ${(exam.slotIndex ?? 0) + 1}`),
+        escapeCsvCell(exam.isParallel ? `${exam.slotLabel} (Parallel)` : exam.slotLabel),
         escapeCsvCell(exam.subjectCode),
         escapeCsvCell(exam.subjectName),
         escapeCsvCell(exam.examDate),
@@ -530,7 +572,7 @@ function TimetableGeneratorView({
           <tbody>
     `;
 
-    scheduledExams.forEach((exam) => {
+    enrichedScheduledExams.forEach((exam) => {
       const roomsDetail = (exam.classroomAllocations || [])
         .map(
           (r) =>
@@ -540,7 +582,7 @@ function TimetableGeneratorView({
 
       tableHtml += `
         <tr>
-          <td class="slot-cell">Slot ${(exam.slotIndex ?? 0) + 1}</td>
+          <td class="slot-cell">${exam.slotLabel || `Slot ${(exam.slotIndex ?? 0) + 1}`}${exam.isParallel ? ' (Parallel)' : ''}</td>
           <td class="code-cell">${exam.subjectCode || ''}</td>
           <td><strong>${exam.subjectName || ''}</strong></td>
           <td>${formatIsoDateDisplay(exam.examDate) || exam.examDate || ''}</td>
@@ -627,7 +669,7 @@ function TimetableGeneratorView({
           <tbody>
     `;
 
-    scheduledExams.forEach((exam) => {
+    enrichedScheduledExams.forEach((exam) => {
       const roomsDetail = (exam.classroomAllocations || [])
         .map(
           (r) =>
@@ -637,7 +679,7 @@ function TimetableGeneratorView({
 
       docHtml += `
         <tr>
-          <td style="font-weight: bold; color: #642F43;">Slot ${(exam.slotIndex ?? 0) + 1}</td>
+          <td style="font-weight: bold; color: #642F43;">${exam.slotLabel || `Slot ${(exam.slotIndex ?? 0) + 1}`}${exam.isParallel ? ' (Parallel)' : ''}</td>
           <td style="font-weight: bold; font-family: monospace;">${exam.subjectCode || ''}</td>
           <td><strong>${exam.subjectName || ''}</strong></td>
           <td>${formatIsoDateDisplay(exam.examDate) || exam.examDate || ''}</td>
@@ -1166,7 +1208,7 @@ function TimetableGeneratorView({
 
       {/* STEP 4 — FINAL EXAMINATION RESULTS */}
       <section className="card-premium p-4 sm:p-6 space-y-5" aria-label="Final examination results">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-[#7D5563]">
               Step 4
@@ -1281,6 +1323,17 @@ function TimetableGeneratorView({
               </div>
             )}
 
+            {/* Parallel examination explanation banner */}
+            {hasParallelExams && (
+              <div className="p-3.5 rounded-2xl bg-[#FAF0F3] border border-[#C58E9B]/55 flex items-start gap-2.5 text-xs text-[#642F43]">
+                <Info className="w-4 h-4 shrink-0 mt-0.5 text-[#642F43]" aria-hidden="true" />
+                <div className="leading-relaxed">
+                  <strong className="font-bold">Parallel Sessions Active (e.g. Slot 4A &amp; Slot 4B):</strong>{' '}
+                  In DAA Graph Coloring, subjects that share <strong>zero student divisions</strong> are assigned the same time slot so they can run concurrently in separate classrooms without conflict. If your institution prefers strictly one exam at a time, select <strong>Single Exam Per Slot</strong> in Step 1.
+                </div>
+              </div>
+            )}
+
             {/* Honest allocation-basis notice */}
             <p className="text-xs text-[#6F4253] bg-[#FAF0F3]/80 border border-[#C58E9B]/35 rounded-xl px-3.5 py-2.5">
               <strong className="text-[#642F43]">Division-level count allocation:</strong>{' '}
@@ -1300,7 +1353,7 @@ function TimetableGeneratorView({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#EED8DF] bg-white">
-                  {scheduledExams.map((exam) => {
+                  {enrichedScheduledExams.map((exam) => {
                     const palette = SLOT_PALETTES[exam.slotIndex % SLOT_PALETTES.length];
                     const rowKey = String(exam.subjectId || exam.id || exam.subjectCode);
                     const isExpanded = Boolean(expandedExamIds[rowKey]);
@@ -1309,7 +1362,7 @@ function TimetableGeneratorView({
                       <React.Fragment key={rowKey}>
                         <tr className="hover:bg-[#FDF8FA] transition-colors">
                           <td className="py-3.5 px-4 align-top">
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-1.5">
                               <span
                                 className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border"
                                 style={{
@@ -1318,8 +1371,16 @@ function TimetableGeneratorView({
                                   borderColor: palette.badgeBorder,
                                 }}
                               >
-                                Slot {exam.slotIndex + 1}
+                                {exam.slotLabel}
                               </span>
+                              {exam.isParallel && (
+                                <span
+                                  className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#642F43]/10 text-[#642F43] border border-[#C58E9B]/55"
+                                  title={`Parallel examination scheduled concurrently in Time Slot ${exam.slotIndex + 1}`}
+                                >
+                                  Parallel
+                                </span>
+                              )}
                               <span className="font-mono text-xs font-bold text-[#642F43]">
                                 {exam.subjectCode}
                               </span>
@@ -1439,7 +1500,7 @@ function TimetableGeneratorView({
 
             {/* Mobile Exam Cards */}
             <div className="md:hidden space-y-3">
-              {scheduledExams.map((exam) => {
+              {enrichedScheduledExams.map((exam) => {
                 const palette = SLOT_PALETTES[exam.slotIndex % SLOT_PALETTES.length];
                 const cardKey = String(exam.subjectId || exam.id || exam.subjectCode);
                 const isExpanded = Boolean(expandedExamIds[cardKey]);
@@ -1451,7 +1512,7 @@ function TimetableGeneratorView({
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5">
                           <span
                             className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border"
                             style={{
@@ -1460,8 +1521,13 @@ function TimetableGeneratorView({
                               borderColor: palette.badgeBorder,
                             }}
                           >
-                            Slot {exam.slotIndex + 1}
+                            {exam.slotLabel}
                           </span>
+                          {exam.isParallel && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#642F43]/10 text-[#642F43] border border-[#C58E9B]/55">
+                              Parallel
+                            </span>
+                          )}
                           <span className="font-mono text-xs font-bold text-[#642F43]">
                             {exam.subjectCode}
                           </span>
@@ -1566,12 +1632,17 @@ function TimetableGeneratorView({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#C58E9B]">
-                  {scheduledExams.map((exam) => {
+                  {enrichedScheduledExams.map((exam) => {
                     const rooms = exam.classroomAllocations || [];
                     return (
                       <tr key={exam.subjectId || exam.id || exam.subjectCode} className="align-top">
                         <td className="py-2 px-3 border border-[#C58E9B] font-bold text-[#642F43]">
-                          Slot {(exam.slotIndex ?? 0) + 1}
+                          <div>{exam.slotLabel || `Slot ${(exam.slotIndex ?? 0) + 1}`}</div>
+                          {exam.isParallel && (
+                            <span className="text-[10px] font-normal text-[#7D5563] block">
+                              Parallel Session
+                            </span>
+                          )}
                         </td>
                         <td className="py-2 px-3 border border-[#C58E9B] font-mono font-bold">
                           {exam.subjectCode}

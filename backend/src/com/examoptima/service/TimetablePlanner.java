@@ -261,15 +261,44 @@ public class TimetablePlanner {
             sessionEnds[sIdx] = sStart.plusMinutes(sessionDurations.get(sIdx).longValue());
         }
 
+        boolean allowParallelExams = JsonHelper.getBoolean(config, "allowParallelExams", true);
         String normalizedAlgo = "backtracking".equalsIgnoreCase(algorithmKey) ? "backtracking" : "greedy";
         if ("backtracking".equals(normalizedAlgo) && maxSlots < 0) {
             throw new PlanningException(400, "Target slot limit cannot be negative.");
         }
 
         ConflictGraph graph = new ConflictGraph(subjects);
-        ColoringResult coloring = "backtracking".equals(normalizedAlgo)
-                ? BacktrackingColoring.solve(graph, maxSlots)
-                : GreedyColoring.solve(graph);
+        ColoringResult coloring;
+        if (!allowParallelExams) {
+            final Map<String, Integer> degrees = graph.getDegrees();
+            List<Subject> sortedByPriority = new ArrayList<Subject>(subjects);
+            Collections.sort(sortedByPriority, new Comparator<Subject>() {
+                @Override
+                public int compare(Subject a, Subject b) {
+                    int degA = degrees.containsKey(a.getId()) ? degrees.get(a.getId()) : 0;
+                    int degB = degrees.containsKey(b.getId()) ? degrees.get(b.getId()) : 0;
+                    if (degB != degA) return Integer.compare(degB, degA);
+                    return a.getCode().compareTo(b.getCode());
+                }
+            });
+            Map<String, Integer> seqAssignments = new LinkedHashMap<String, Integer>();
+            for (int i = 0; i < sortedByPriority.size(); i++) {
+                seqAssignments.put(sortedByPriority.get(i).getId(), Integer.valueOf(i));
+            }
+            coloring = new ColoringResult(
+                    "Sequential Single-Exam Scheduling",
+                    seqAssignments,
+                    sortedByPriority.size(),
+                    50000L,
+                    sortedByPriority.size(),
+                    true,
+                    "Valid sequential timetable generated with 1 exam per time slot."
+            );
+        } else {
+            coloring = "backtracking".equals(normalizedAlgo)
+                    ? BacktrackingColoring.solve(graph, maxSlots)
+                    : GreedyColoring.solve(graph);
+        }
 
         if (!coloring.isValid() || coloring.getSlotAssignments() == null || coloring.getSlotAssignments().isEmpty()) {
             throw new PlanningException(
@@ -361,7 +390,9 @@ public class TimetablePlanner {
             // while automatically reused across different slots.
             List<Map<String, Object>> roomPool = new ArrayList<Map<String, Object>>(availableRooms);
 
-            for (Subject subj : slotSubjects) {
+            int totalInSlot = slotSubjects.size();
+            for (int subIdx = 0; subIdx < totalInSlot; subIdx++) {
+                Subject subj = slotSubjects.get(subIdx);
                 int needed = Math.max(0, subj.getStudentCount());
                 List<Map<String, Object>> allocations = new ArrayList<Map<String, Object>>();
 
@@ -377,12 +408,25 @@ public class TimetablePlanner {
                     );
                 }
 
+                boolean isParallel = totalInSlot > 1;
+                String slotLabel = "Slot " + (slotIndex + 1);
+                String subSlotCode = "";
+                if (isParallel) {
+                    char letter = (char) ('A' + subIdx);
+                    subSlotCode = String.valueOf(letter);
+                    slotLabel = "Slot " + (slotIndex + 1) + letter;
+                }
+
                 Map<String, Object> examEntry = new LinkedHashMap<String, Object>();
                 examEntry.put("id", "exam-" + UUID.randomUUID().toString());
                 examEntry.put("subjectId", subj.getId());
                 examEntry.put("subjectCode", subj.getCode());
                 examEntry.put("subjectName", subj.getName());
                 examEntry.put("slotIndex", Integer.valueOf(slotIndex));
+                examEntry.put("slotLabel", slotLabel);
+                examEntry.put("isParallel", Boolean.valueOf(isParallel));
+                examEntry.put("subSlotCode", subSlotCode);
+                examEntry.put("totalInSlot", Integer.valueOf(totalInSlot));
                 examEntry.put("examDate", examDateStr);
                 examEntry.put("startTime", startTimeStr);
                 examEntry.put("endTime", endTimeStr);

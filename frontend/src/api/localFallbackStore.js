@@ -467,6 +467,7 @@ export const localFallbackApi = {
       maxExamsPerDay: Number(normalizedCfg.maxExamsPerDay),
       sessionDurationsMinutes: normalizedDurations,
       sessionStartTimes: normalizedStarts,
+      allowParallelExams: normalizedCfg.allowParallelExams !== false,
     };
     saveDb(db);
     return db.config;
@@ -487,10 +488,32 @@ export const localFallbackApi = {
 
     const graph = buildConflictGraph(subjects);
     const algoKey = algorithm === 'backtracking' ? 'backtracking' : 'greedy';
-    const result =
-      algoKey === 'backtracking'
-        ? runBacktrackingColoring(graph, Number(maxSlots) || 0)
-        : runGreedyColoring(graph);
+    let result;
+    if (cfg.allowParallelExams === false) {
+      const sorted = [...subjects].sort((a, b) => {
+        const degA = graph.degrees[a.id] || 0;
+        const degB = graph.degrees[b.id] || 0;
+        return degB - degA || a.code.localeCompare(b.code);
+      });
+      const assignments = {};
+      sorted.forEach((s, idx) => {
+        assignments[s.id] = idx;
+      });
+      result = {
+        algorithmName: 'Sequential Single-Exam Scheduling',
+        assignments,
+        numSlots: sorted.length,
+        executionTimeMs: 0.1,
+        operationsCount: sorted.length,
+        isValid: true,
+        statusMessage: 'Valid sequential schedule generated with 1 exam per time slot.',
+      };
+    } else {
+      result =
+        algoKey === 'backtracking'
+          ? runBacktrackingColoring(graph, Number(maxSlots) || 0)
+          : runGreedyColoring(graph);
+    }
 
     if (!result.isValid || !result.assignments || Object.keys(result.assignments).length === 0) {
       throw makeError(400, result.statusMessage || 'Unable to generate a valid conflict-free schedule.');
@@ -524,8 +547,10 @@ export const localFallbackApi = {
       const examDate = addDaysIso(cfg.startDate, dayIdx);
       const session = dailySessions[sessIdx];
       let freeRooms = [...availableRooms];
+      const totalInSlot = slotSubjects.length;
 
-      for (const s of slotSubjects) {
+      for (let subIdx = 0; subIdx < totalInSlot; subIdx++) {
+        const s = slotSubjects[subIdx];
         const remainingCapacity = freeRooms.reduce((sum, r) => sum + r.capacity, 0);
         if (s.studentCount > remainingCapacity) {
           const deficit = s.studentCount - remainingCapacity;
@@ -542,12 +567,20 @@ export const localFallbackApi = {
         const usedIds = new Set(allocations.map((a) => a.classroomId));
         freeRooms = freeRooms.filter((r) => !usedIds.has(r.id));
 
+        const isParallel = totalInSlot > 1;
+        const subSlotCode = isParallel ? String.fromCharCode(65 + (subIdx % 26)) : '';
+        const slotLabel = isParallel ? `Slot ${slot + 1}${subSlotCode}` : `Slot ${slot + 1}`;
+
         scheduledExams.push({
           id: `exam-${slot}-${s.id}`,
           subjectId: s.id,
           subjectCode: s.code,
           subjectName: s.name,
           slotIndex: slot,
+          slotLabel,
+          isParallel,
+          subSlotCode,
+          totalInSlot,
           examDate,
           startTime: session.startTime,
           endTime: session.endTime,

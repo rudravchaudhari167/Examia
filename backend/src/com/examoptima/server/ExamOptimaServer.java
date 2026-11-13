@@ -462,9 +462,10 @@ public class ExamOptimaServer {
                             ? JsonHelper.getStringList(body, "sessionStartTimes")
                             : null;
                     List<String> sessionStarts = TimetablePlanner.resolveSessionStartTimes(rawStartTimes, dailyStart, sessionDurations, breakMin, maxPerDay);
+                    boolean allowParallel = JsonHelper.getBoolean(body, "allowParallelExams", true);
 
                     TimetablePlanner.validateConfig(startDate, sessionStarts.get(0), durationMin, breakMin, numDays, maxPerDay, sessionDurations, sessionStarts);
-                    db.saveConfig(startDate, sessionStarts.get(0), sessionDurations.get(0).intValue(), breakMin, numDays, maxPerDay, sessionDurations, sessionStarts);
+                    db.saveConfig(startDate, sessionStarts.get(0), sessionDurations.get(0).intValue(), breakMin, numDays, maxPerDay, sessionDurations, sessionStarts, allowParallel);
                     sendResponse(exchange, 200, JsonHelper.toJson(db.getConfig()));
                     return;
                 }
@@ -510,9 +511,12 @@ public class ExamOptimaServer {
                             ? JsonHelper.getStringList(incoming, "sessionStartTimes")
                             : null;
                     List<String> sessionStarts = TimetablePlanner.resolveSessionStartTimes(rawStartTimes, dailyStart, sessionDurations, breakMin, maxPerDay);
+                    boolean allowParallel = incoming.containsKey("allowParallelExams")
+                            ? JsonHelper.getBoolean(incoming, "allowParallelExams", true)
+                            : JsonHelper.getBoolean(cfg, "allowParallelExams", true);
 
                     TimetablePlanner.validateConfig(startDate, sessionStarts.get(0), durationMin, breakMin, numDays, maxPerDay, sessionDurations, sessionStarts);
-                    db.saveConfig(startDate, sessionStarts.get(0), sessionDurations.get(0).intValue(), breakMin, numDays, maxPerDay, sessionDurations, sessionStarts);
+                    db.saveConfig(startDate, sessionStarts.get(0), sessionDurations.get(0).intValue(), breakMin, numDays, maxPerDay, sessionDurations, sessionStarts, allowParallel);
                     cfg = db.getConfig();
                 }
 

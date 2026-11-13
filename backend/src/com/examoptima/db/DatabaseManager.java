@@ -406,12 +406,15 @@ public class DatabaseManager {
         List<Map<String, Object>> cols = queryRows("PRAGMA table_info(exam_configurations);");
         boolean hasDurations = false;
         boolean hasStartTimes = false;
+        boolean hasAllowParallel = false;
         for (Map<String, Object> col : cols) {
             String colName = JsonHelper.getString(col, "name", "");
             if ("session_durations_json".equals(colName)) {
                 hasDurations = true;
             } else if ("session_start_times_json".equals(colName)) {
                 hasStartTimes = true;
+            } else if ("allow_parallel_exams".equals(colName)) {
+                hasAllowParallel = true;
             }
         }
         if (!hasDurations) {
@@ -419,6 +422,9 @@ public class DatabaseManager {
         }
         if (!hasStartTimes) {
             executeTransaction("ALTER TABLE exam_configurations ADD COLUMN session_start_times_json TEXT NOT NULL DEFAULT '[\"09:00\",\"13:00\"]';");
+        }
+        if (!hasAllowParallel) {
+            executeTransaction("ALTER TABLE exam_configurations ADD COLUMN allow_parallel_exams INTEGER NOT NULL DEFAULT 1;");
         }
     }
 
@@ -500,31 +506,37 @@ public class DatabaseManager {
             cfg.put("maxExamsPerDay", Integer.valueOf(maxPerDay));
             cfg.put("sessionDurationsMinutes", sessionDurations);
             cfg.put("sessionStartTimes", sessionStarts);
+            cfg.put("allowParallelExams", Boolean.valueOf(JsonHelper.getInt(r, "allow_parallel_exams", 1) == 1));
         }
         return cfg;
     }
 
     public synchronized void saveConfig(String startDate, String dailyStartTime, int examDurationMinutes,
             int breakDurationMinutes, int numDays, int maxExamsPerDay) {
-        saveConfig(startDate, dailyStartTime, examDurationMinutes, breakDurationMinutes, numDays, maxExamsPerDay, null, null);
+        saveConfig(startDate, dailyStartTime, examDurationMinutes, breakDurationMinutes, numDays, maxExamsPerDay, null, null, true);
     }
 
     public synchronized void saveConfig(String startDate, String dailyStartTime, int examDurationMinutes,
             int breakDurationMinutes, int numDays, int maxExamsPerDay, List<Integer> sessionDurationsMinutes) {
-        saveConfig(startDate, dailyStartTime, examDurationMinutes, breakDurationMinutes, numDays, maxExamsPerDay, sessionDurationsMinutes, null);
+        saveConfig(startDate, dailyStartTime, examDurationMinutes, breakDurationMinutes, numDays, maxExamsPerDay, sessionDurationsMinutes, null, true);
     }
 
     public synchronized void saveConfig(String startDate, String dailyStartTime, int examDurationMinutes,
             int breakDurationMinutes, int numDays, int maxExamsPerDay, List<Integer> sessionDurationsMinutes, List<String> sessionStartTimes) {
+        saveConfig(startDate, dailyStartTime, examDurationMinutes, breakDurationMinutes, numDays, maxExamsPerDay, sessionDurationsMinutes, sessionStartTimes, true);
+    }
+
+    public synchronized void saveConfig(String startDate, String dailyStartTime, int examDurationMinutes,
+            int breakDurationMinutes, int numDays, int maxExamsPerDay, List<Integer> sessionDurationsMinutes, List<String> sessionStartTimes, boolean allowParallelExams) {
         List<Integer> normalized = normalizeSessionDurations(sessionDurationsMinutes, examDurationMinutes, maxExamsPerDay);
         List<String> normalizedStarts = normalizeSessionStartTimes(sessionStartTimes, dailyStartTime, normalized, breakDurationMinutes, maxExamsPerDay);
         String firstStart = normalizedStarts.get(0);
         int firstDuration = normalized.get(0).intValue();
         String durationsJson = JsonHelper.toJson(normalized);
         String startsJson = JsonHelper.toJson(normalizedStarts);
-        String sql = "INSERT INTO exam_configurations(id, start_date, daily_start_time, exam_duration_minutes, break_duration_minutes, num_days, max_exams_per_day, session_durations_json, session_start_times_json, updated_at) "
+        String sql = "INSERT INTO exam_configurations(id, start_date, daily_start_time, exam_duration_minutes, break_duration_minutes, num_days, max_exams_per_day, session_durations_json, session_start_times_json, allow_parallel_exams, updated_at) "
                 + "VALUES (1, " + sqlStr(startDate) + ", " + sqlStr(firstStart) + ", "
-                + firstDuration + ", " + breakDurationMinutes + ", " + numDays + ", " + maxExamsPerDay + ", " + sqlStr(durationsJson) + ", " + sqlStr(startsJson) + ", CURRENT_TIMESTAMP) "
+                + firstDuration + ", " + breakDurationMinutes + ", " + numDays + ", " + maxExamsPerDay + ", " + sqlStr(durationsJson) + ", " + sqlStr(startsJson) + ", " + (allowParallelExams ? 1 : 0) + ", CURRENT_TIMESTAMP) "
                 + "ON CONFLICT(id) DO UPDATE SET "
                 + "start_date = excluded.start_date, "
                 + "daily_start_time = excluded.daily_start_time, "
@@ -534,6 +546,7 @@ public class DatabaseManager {
                 + "max_exams_per_day = excluded.max_exams_per_day, "
                 + "session_durations_json = excluded.session_durations_json, "
                 + "session_start_times_json = excluded.session_start_times_json, "
+                + "allow_parallel_exams = excluded.allow_parallel_exams, "
                 + "updated_at = CURRENT_TIMESTAMP;";
         executeTransaction(sql);
     }
@@ -949,6 +962,31 @@ public class DatabaseManager {
             examObj.put("classroomAllocations", roomAllocs);
             examObj.put("classroomsAssignedCount", Integer.valueOf(roomAllocs.size()));
             scheduledExams.add(examObj);
+        }
+
+        Map<Integer, Integer> countPerSlot = new LinkedHashMap<Integer, Integer>();
+        for (Map<String, Object> exam : scheduledExams) {
+            int s = JsonHelper.getInt(exam, "slotIndex", 0);
+            countPerSlot.put(Integer.valueOf(s), Integer.valueOf(countPerSlot.getOrDefault(Integer.valueOf(s), 0) + 1));
+        }
+        Map<Integer, Integer> letterIndexPerSlot = new LinkedHashMap<Integer, Integer>();
+        for (Map<String, Object> exam : scheduledExams) {
+            int s = JsonHelper.getInt(exam, "slotIndex", 0);
+            int total = countPerSlot.getOrDefault(Integer.valueOf(s), 1);
+            boolean isParallel = total > 1;
+            String slotLabel = "Slot " + (s + 1);
+            String subCode = "";
+            if (isParallel) {
+                int idx = letterIndexPerSlot.getOrDefault(Integer.valueOf(s), 0);
+                letterIndexPerSlot.put(Integer.valueOf(s), idx + 1);
+                char letter = (char) ('A' + idx);
+                subCode = String.valueOf(letter);
+                slotLabel = "Slot " + (s + 1) + letter;
+            }
+            exam.put("slotLabel", slotLabel);
+            exam.put("isParallel", Boolean.valueOf(isParallel));
+            exam.put("subSlotCode", subCode);
+            exam.put("totalInSlot", Integer.valueOf(total));
         }
 
         Map<String, Object> result = new LinkedHashMap<String, Object>();
