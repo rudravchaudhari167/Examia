@@ -489,21 +489,49 @@ table {
 
 /* Print styles for Final Schedule */
 @media print {
-  body {
-    background: #FFFFFF !important;
-    color: #000000 !important;
+  @page {
+    size: landscape;
+    margin: 12mm;
   }
-  .no-print {
+
+  html,
+  body,
+  #root,
+  .examia-app-shell,
+  #examia-main-shell,
+  .examia-main-scroll {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    background: #FFFFFF !important;
+    color: #111111 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .no-print,
+  .examia-topbar,
+  #examia-navigation-drawer,
+  .examia-drawer-aside,
+  .examia-screen-timetable {
     display: none !important;
   }
-  .print-only {
+
+  .print-only,
+  .examia-print-document {
     display: block !important;
   }
-  .card-premium, .card-glass, .clay-dark-hero {
+
+  .card-premium,
+  .card-glass,
+  .clay-dark-hero {
     background: #FFFFFF !important;
-    color: #000000 !important;
+    color: #111111 !important;
     box-shadow: none !important;
-    border: 1px solid #CCCCCC !important;
+    border: none !important;
+    padding: 0 !important;
   }
 }
 

@@ -213,7 +213,7 @@ function Topbar({
         document.body
       )}
 
-      <header className="bg-[#FDF9FA] border-b border-[#C58E9B]/40 shadow-[0_4px_18px_-4px_rgba(100,47,67,0.08)] sticky top-0 z-20 select-none examia-safe-pt">
+      <header className="no-print bg-[#FDF9FA] border-b border-[#C58E9B]/40 shadow-[0_4px_18px_-4px_rgba(100,47,67,0.08)] sticky top-0 z-20 select-none examia-safe-pt">
         <div className="min-h-16 md:h-20 px-3 sm:px-6 lg:px-8 flex items-center justify-between gap-2 sm:gap-3">
           {/* Left: Mobile Drawer Trigger + Title & Breadcrumb */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">

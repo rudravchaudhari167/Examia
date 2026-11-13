@@ -70,7 +70,7 @@ function Sidebar({
       id="examia-navigation-drawer"
       tabIndex={-1}
       aria-label="Primary navigation"
-      className="examia-drawer-aside relative w-72 bg-[#FAF1F4] border-r border-[#C58E9B]/45 lg:h-dvh flex flex-col justify-between shrink-0 select-none lg:z-20 rounded-r-[26px] shadow-[6px_0_24px_-8px_rgba(100,47,67,0.12)] examia-safe-drawer-pad lg:p-0 focus:outline-none"
+      className="no-print examia-drawer-aside relative w-72 bg-[#FAF1F4] border-r border-[#C58E9B]/45 lg:h-dvh flex flex-col justify-between shrink-0 select-none lg:z-20 rounded-r-[26px] shadow-[6px_0_24px_-8px_rgba(100,47,67,0.12)] examia-safe-drawer-pad lg:p-0 focus:outline-none"
     >
       <div className="lg:hidden absolute top-3 right-3 z-20">
         <button

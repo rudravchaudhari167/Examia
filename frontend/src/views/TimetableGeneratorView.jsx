@@ -9,6 +9,8 @@ import {
   ChevronRight,
   Clock,
   Download,
+  FileSpreadsheet,
+  FileText,
   Loader2,
   Printer,
   ShieldCheck,
@@ -431,6 +433,7 @@ function TimetableGeneratorView({
   const handleExportCsv = () => {
     if (!scheduledExams.length) return;
     const headers = [
+      'Slot',
       'Subject Code',
       'Subject Name',
       'Exam Date',
@@ -438,16 +441,17 @@ function TimetableGeneratorView({
       'End Time',
       'Total Students',
       'Classrooms Assigned Count',
-      'Classroom Breakdown',
+      'Classroom Allocations',
     ];
     const rows = scheduledExams.map((exam) => {
       const breakdown = (exam.classroomAllocations || [])
         .map(
           (room) =>
-            `${room.classroomName} (${room.building}): ${room.allocatedStudents}/${room.capacity} seats, ${room.remainingSeats} remaining`
+            `${room.classroomName} (${room.building}): ${room.allocatedStudents}/${room.capacity} seats (${room.remainingSeats} free)`
         )
         .join(' | ');
       return [
+        escapeCsvCell(`Slot ${(exam.slotIndex ?? 0) + 1}`),
         escapeCsvCell(exam.subjectCode),
         escapeCsvCell(exam.subjectName),
         escapeCsvCell(exam.examDate),
@@ -463,7 +467,211 @@ function TimetableGeneratorView({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'examia-timetable.csv';
+    link.download = 'examia-examination-timetable.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportExcel = () => {
+    if (!scheduledExams.length) return;
+    const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    const algoStr = activeAlgorithmLabel;
+    const slotsStr = latestTimetable?.numSlots ?? 0;
+
+    let tableHtml = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office"
+            xmlns:x="urn:schemas-microsoft-com:office:excel"
+            xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>Examination Timetable</x:Name>
+                <x:WorksheetOptions>
+                  <x:DisplayGridlines/>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <style>
+          body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #361522; margin: 15px; }
+          .title { font-size: 16pt; font-weight: bold; color: #642F43; }
+          .meta { font-size: 10pt; color: #6F4253; font-style: italic; margin-top: 4px; margin-bottom: 15px; }
+          table { border-collapse: collapse; width: 100%; }
+          th { background-color: #642F43; color: #FFFFFF; font-weight: bold; border: 1px solid #4A1F30; padding: 10px 12px; text-align: left; }
+          td { border: 1px solid #C58E9B; padding: 8px 12px; vertical-align: top; }
+          tr:nth-child(even) { background-color: #FAF0F3; }
+          .slot-cell { font-weight: bold; color: #642F43; }
+          .code-cell { font-weight: bold; font-family: Consolas, monospace; }
+        </style>
+      </head>
+      <body>
+        <div class="title">EXAMIA — OFFICIAL EXAMINATION TIMETABLE</div>
+        <div class="meta">Generated: ${dateStr} &nbsp;|&nbsp; Algorithm: ${algoStr} &nbsp;|&nbsp; Total Slots: ${slotsStr} &nbsp;|&nbsp; Total Exams: ${scheduledExams.length}</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Slot</th>
+              <th>Subject Code</th>
+              <th>Subject Name</th>
+              <th>Exam Date</th>
+              <th>Start Time</th>
+              <th>End Time</th>
+              <th>Total Students</th>
+              <th>Rooms Count</th>
+              <th>Assigned Classrooms (Allocated / Capacity &bull; Remaining)</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    scheduledExams.forEach((exam) => {
+      const roomsDetail = (exam.classroomAllocations || [])
+        .map(
+          (r) =>
+            `${r.classroomName} (${r.building}) &mdash; ${r.allocatedStudents}/${r.capacity} seats (${r.remainingSeats} remaining)`
+        )
+        .join('<br/>');
+
+      tableHtml += `
+        <tr>
+          <td class="slot-cell">Slot ${(exam.slotIndex ?? 0) + 1}</td>
+          <td class="code-cell">${exam.subjectCode || ''}</td>
+          <td><strong>${exam.subjectName || ''}</strong></td>
+          <td>${formatIsoDateDisplay(exam.examDate) || exam.examDate || ''}</td>
+          <td>${exam.startTime || ''}</td>
+          <td>${exam.endTime || ''}</td>
+          <td style="text-align: center; font-weight: bold;">${exam.totalStudents || 0}</td>
+          <td style="text-align: center;">${exam.classroomsAssignedCount || (exam.classroomAllocations?.length ?? 0)}</td>
+          <td>${roomsDetail || 'No classrooms assigned'}</td>
+        </tr>
+      `;
+    });
+
+    tableHtml += `
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([tableHtml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'examia-examination-timetable.xls';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportDocs = () => {
+    if (!scheduledExams.length) return;
+    const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const algoStr = activeAlgorithmLabel;
+    const slotsStr = latestTimetable?.numSlots ?? 0;
+
+    let docHtml = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office"
+            xmlns:w="urn:schemas-microsoft-com:office:word"
+            xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <!--[if gte mso 9]>
+        <xml>
+          <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>100</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+          </w:WordDocument>
+        </xml>
+        <![endif]-->
+        <style>
+          @page { size: landscape; margin: 1.5cm; }
+          body { font-family: "Segoe UI", Arial, sans-serif; font-size: 10pt; color: #361522; margin: 0; }
+          .header-title { font-size: 16pt; font-weight: bold; color: #642F43; margin-bottom: 2px; }
+          .sub-title { font-size: 10pt; color: #6F4253; margin-bottom: 12px; }
+          .metadata-box { background-color: #FAF0F3; border: 1px solid #C58E9B; padding: 8px 12px; margin-bottom: 16px; font-size: 9.5pt; }
+          table { border-collapse: collapse; width: 100%; }
+          th { background-color: #642F43; color: #FFFFFF; font-weight: bold; border: 1px solid #4A1F30; padding: 8px 10px; font-size: 9pt; text-transform: uppercase; }
+          td { border: 1px solid #C58E9B; padding: 7px 10px; font-size: 9pt; vertical-align: top; }
+          tr:nth-child(even) { background-color: #FAF0F3; }
+          .room-item { font-size: 8.5pt; color: #361522; line-height: 1.35; }
+        </style>
+      </head>
+      <body>
+        <div class="header-title">EXAMIA &mdash; OFFICIAL EXAMINATION TIMETABLE</div>
+        <div class="sub-title">Academic Intelligence Platform &middot; Verified Conflict-Free Schedule</div>
+        <div class="metadata-box">
+          <strong>Date Generated:</strong> ${dateStr} &nbsp;&bull;&nbsp;
+          <strong>Algorithm:</strong> ${algoStr} &nbsp;&bull;&nbsp;
+          <strong>Total Slots:</strong> ${slotsStr} &nbsp;&bull;&nbsp;
+          <strong>Scheduled Examinations:</strong> ${scheduledExams.length}
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 8%;">Slot</th>
+              <th style="width: 12%;">Code</th>
+              <th style="width: 22%;">Subject Name</th>
+              <th style="width: 13%;">Date</th>
+              <th style="width: 14%;">Time</th>
+              <th style="width: 8%; text-align: center;">Students</th>
+              <th style="width: 23%;">Assigned Classrooms & Capacity Breakdown</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    scheduledExams.forEach((exam) => {
+      const roomsDetail = (exam.classroomAllocations || [])
+        .map(
+          (r) =>
+            `<div class="room-item"><strong>${r.classroomName}</strong> (${r.building}) &mdash; Allocated: ${r.allocatedStudents}/${r.capacity} seats <span style="color:#6F4253;">(${r.remainingSeats} free)</span></div>`
+        )
+        .join('<div style="height:3px;"></div>');
+
+      docHtml += `
+        <tr>
+          <td style="font-weight: bold; color: #642F43;">Slot ${(exam.slotIndex ?? 0) + 1}</td>
+          <td style="font-weight: bold; font-family: monospace;">${exam.subjectCode || ''}</td>
+          <td><strong>${exam.subjectName || ''}</strong></td>
+          <td>${formatIsoDateDisplay(exam.examDate) || exam.examDate || ''}</td>
+          <td>${exam.startTime || ''} &ndash; ${exam.endTime || ''}</td>
+          <td style="text-align: center; font-weight: bold;">${exam.totalStudents || 0}</td>
+          <td>${roomsDetail || 'No classrooms assigned'}</td>
+        </tr>
+      `;
+    });
+
+    docHtml += `
+          </tbody>
+        </table>
+        <table style="width:100%; border:none; margin-top: 35px;">
+          <tr style="background:transparent;">
+            <td style="border:none; width:50%; padding-top: 25px;">
+              __________________________________________<br/>
+              <strong>Prepared by:</strong> Examination Committee
+            </td>
+            <td style="border:none; width:50%; text-align:right; padding-top: 25px;">
+              __________________________________________<br/>
+              <strong>Approved by:</strong> Dean / Controller of Examinations
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([docHtml], { type: 'application/msword;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'examia-examination-timetable.doc';
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -972,19 +1180,39 @@ function TimetableGeneratorView({
             <div className="no-print flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={handleExportCsv}
-                className="btn-secondary px-3.5 py-2 text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+                onClick={handleExportExcel}
+                className="btn-secondary min-h-[38px] px-3.5 py-2 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+                title="Download formatted Excel spreadsheet with all classroom allocations (.xls)"
               >
-                <Download className="w-4 h-4" aria-hidden="true" />
+                <FileSpreadsheet className="w-4 h-4 text-[#642F43]" aria-hidden="true" />
+                <span>Export Excel</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleExportDocs}
+                className="btn-secondary min-h-[38px] px-3.5 py-2 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+                title="Download formatted Word / Google Docs document (.doc)"
+              >
+                <FileText className="w-4 h-4 text-[#642F43]" aria-hidden="true" />
+                <span>Export Docs</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleExportCsv}
+                className="btn-secondary min-h-[38px] px-3.5 py-2 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+                title="Download Comma Separated Values (.csv)"
+              >
+                <Download className="w-4 h-4 text-[#642F43]" aria-hidden="true" />
                 <span>Export CSV</span>
               </button>
               <button
                 type="button"
                 onClick={handlePrint}
-                className="btn-secondary px-3.5 py-2 text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+                className="btn-primary min-h-[38px] px-4 py-2 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+                title="Print Official Timetable or Save as PDF"
               >
                 <Printer className="w-4 h-4" aria-hidden="true" />
-                <span>Print</span>
+                <span>Print Timetable</span>
               </button>
             </div>
           )}
@@ -1009,7 +1237,9 @@ function TimetableGeneratorView({
           </div>
         ) : (
           <>
-            {/* Top Result Metrics */}
+            {/* Screen Interactive View (Hidden during Print) */}
+            <div className="examia-screen-timetable space-y-4 print:hidden">
+              {/* Top Result Metrics */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="p-3.5 rounded-2xl bg-[#FAF0F3] border border-[#C58E9B]/45">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-[#7D5563] block">
@@ -1299,6 +1529,96 @@ function TimetableGeneratorView({
                   </article>
                 );
               })}
+            </div>
+          </div>
+          {/* End of Screen Interactive View */}
+
+          {/* Dedicated Official Printable Document (Automatically active on Print & PDF output) */}
+          <div className="examia-print-document hidden print:block space-y-4">
+              <div className="border-b-2 border-[#642F43] pb-3 mb-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h1 className="text-xl font-bold font-serif text-[#642F43] tracking-wide uppercase">
+                      EXAMIA — OFFICIAL EXAMINATION TIMETABLE
+                    </h1>
+                    <p className="text-xs text-[#6F4253] mt-0.5">
+                      Academic Intelligence Platform &middot; Verified Conflict-Free Institutional Schedule
+                    </p>
+                  </div>
+                  <div className="text-right text-xs text-[#6F4253] shrink-0 leading-relaxed">
+                    <p><strong>Generated:</strong> {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                    <p><strong>Algorithm:</strong> {activeAlgorithmLabel}</p>
+                    <p><strong>Slots Used:</strong> {latestTimetable?.numSlots ?? 0} &middot; <strong>Total Exams:</strong> {scheduledExams.length}</p>
+                  </div>
+                </div>
+              </div>
+
+              <table className="w-full text-left border-collapse text-xs border border-[#C58E9B]">
+                <thead>
+                  <tr className="bg-[#642F43] text-white uppercase text-[11px] font-bold">
+                    <th className="py-2.5 px-3 border border-[#4A1F30] w-[10%]">Slot</th>
+                    <th className="py-2.5 px-3 border border-[#4A1F30] w-[12%]">Subject Code</th>
+                    <th className="py-2.5 px-3 border border-[#4A1F30] w-[22%]">Subject Name</th>
+                    <th className="py-2.5 px-3 border border-[#4A1F30] w-[13%]">Date</th>
+                    <th className="py-2.5 px-3 border border-[#4A1F30] w-[14%]">Time</th>
+                    <th className="py-2.5 px-3 border border-[#4A1F30] w-[7%] text-center">Students</th>
+                    <th className="py-2.5 px-3 border border-[#4A1F30] w-[22%]">Assigned Classrooms & Capacity</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#C58E9B]">
+                  {scheduledExams.map((exam) => {
+                    const rooms = exam.classroomAllocations || [];
+                    return (
+                      <tr key={exam.subjectId || exam.id || exam.subjectCode} className="align-top">
+                        <td className="py-2 px-3 border border-[#C58E9B] font-bold text-[#642F43]">
+                          Slot {(exam.slotIndex ?? 0) + 1}
+                        </td>
+                        <td className="py-2 px-3 border border-[#C58E9B] font-mono font-bold">
+                          {exam.subjectCode}
+                        </td>
+                        <td className="py-2 px-3 border border-[#C58E9B] font-semibold text-[#361522]">
+                          {exam.subjectName}
+                        </td>
+                        <td className="py-2 px-3 border border-[#C58E9B] whitespace-nowrap">
+                          {formatIsoDateDisplay(exam.examDate)}
+                        </td>
+                        <td className="py-2 px-3 border border-[#C58E9B] whitespace-nowrap">
+                          {exam.startTime} – {exam.endTime}
+                        </td>
+                        <td className="py-2 px-3 border border-[#C58E9B] text-center font-bold">
+                          {exam.totalStudents}
+                        </td>
+                        <td className="py-2 px-3 border border-[#C58E9B]">
+                          {rooms.length === 0 ? (
+                            <span className="italic text-[#7D5563]">None assigned</span>
+                          ) : (
+                            <div className="space-y-1">
+                              {rooms.map((r) => (
+                                <div key={r.classroomId || r.classroomName} className="text-[11px] leading-tight">
+                                  <strong className="text-[#361522]">{r.classroomName}</strong> ({r.building}):{' '}
+                                  <span className="font-mono">{r.allocatedStudents}/{r.capacity} seats</span>{' '}
+                                  <span className="text-[#6F4253]">({r.remainingSeats} remaining)</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+
+              <div className="pt-6 flex justify-between text-xs text-[#6F4253]">
+                <div>
+                  <div className="w-56 border-b border-[#642F43] pb-1 mb-1 font-semibold">Prepared by Examination Office</div>
+                  <p className="text-[10px]">Examia Academic Intelligence Platform</p>
+                </div>
+                <div className="text-right">
+                  <div className="w-56 border-b border-[#642F43] pb-1 mb-1 font-semibold ml-auto">Dean / Controller of Examinations</div>
+                  <p className="text-[10px]">Official Institutional Seal</p>
+                </div>
+              </div>
             </div>
           </>
         )}
