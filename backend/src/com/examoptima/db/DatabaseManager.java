@@ -1033,17 +1033,4 @@ public class DatabaseManager {
         }
         return runs;
     }
-
-    /**
-     * Nested static alias so both com.examoptima.db.ClassroomInUseException
-     * and com.examoptima.db.DatabaseManager.ClassroomInUseException resolve
-     * cleanly across IDE language servers and compilers.
-     */
-    public static class ClassroomInUseException extends com.examoptima.db.ClassroomInUseException {
-        private static final long serialVersionUID = 1L;
-
-        public ClassroomInUseException(String message, List<Map<String, Object>> usages) {
-            super(message, usages);
-        }
-    }
 }
