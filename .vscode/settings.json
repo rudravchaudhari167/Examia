@@ -8,6 +8,7 @@
     "**/.git": true,
     "**/.DS_Store": true,
     "**/Thumbs.db": true,
+    "**/node_modules": true,
     "backend/bin": true,
     "backend/data": true,
     "frontend/dist": true,
@@ -15,10 +16,10 @@
     ".project": true
   },
   "search.exclude": {
+    "**/node_modules": true,
     "backend/bin": true,
     "backend/data": true,
-    "frontend/dist": true,
-    "frontend/node_modules": true
+    "frontend/dist": true
   }
 }
 
