@@ -11,6 +11,7 @@ import {
   Download,
   FileSpreadsheet,
   FileText,
+  Info,
   Loader2,
   Printer,
   ShieldCheck,
