@@ -966,27 +966,27 @@ public class DatabaseManager {
 
         Map<Integer, Integer> countPerSlot = new LinkedHashMap<Integer, Integer>();
         for (Map<String, Object> exam : scheduledExams) {
-            int s = JsonHelper.getInt(exam, "slotIndex", 0);
-            countPerSlot.put(Integer.valueOf(s), Integer.valueOf(countPerSlot.getOrDefault(Integer.valueOf(s), 0) + 1));
+            int slotIdx = JsonHelper.getInt(exam, "slotIndex", 0);
+            countPerSlot.put(Integer.valueOf(slotIdx), Integer.valueOf(countPerSlot.getOrDefault(Integer.valueOf(slotIdx), 0) + 1));
         }
         Map<Integer, Integer> letterIndexPerSlot = new LinkedHashMap<Integer, Integer>();
-        for (Map<String, Object> exam : scheduledExams) {
-            int s = JsonHelper.getInt(exam, "slotIndex", 0);
-            int total = countPerSlot.getOrDefault(Integer.valueOf(s), 1);
+        for (Map<String, Object> examItem : scheduledExams) {
+            int curSlot = JsonHelper.getInt(examItem, "slotIndex", 0);
+            int total = countPerSlot.getOrDefault(Integer.valueOf(curSlot), 1);
             boolean isParallel = total > 1;
-            String slotLabel = "Slot " + (s + 1);
+            String slotLabel = "Slot " + (curSlot + 1);
             String subCode = "";
             if (isParallel) {
-                int idx = letterIndexPerSlot.getOrDefault(Integer.valueOf(s), 0);
-                letterIndexPerSlot.put(Integer.valueOf(s), idx + 1);
+                int idx = letterIndexPerSlot.getOrDefault(Integer.valueOf(curSlot), 0);
+                letterIndexPerSlot.put(Integer.valueOf(curSlot), idx + 1);
                 char letter = (char) ('A' + idx);
                 subCode = String.valueOf(letter);
-                slotLabel = "Slot " + (s + 1) + letter;
+                slotLabel = "Slot " + (curSlot + 1) + letter;
             }
-            exam.put("slotLabel", slotLabel);
-            exam.put("isParallel", Boolean.valueOf(isParallel));
-            exam.put("subSlotCode", subCode);
-            exam.put("totalInSlot", Integer.valueOf(total));
+            examItem.put("slotLabel", slotLabel);
+            examItem.put("isParallel", Boolean.valueOf(isParallel));
+            examItem.put("subSlotCode", subCode);
+            examItem.put("totalInSlot", Integer.valueOf(total));
         }
 
         Map<String, Object> result = new LinkedHashMap<String, Object>();
