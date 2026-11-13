@@ -8,6 +8,7 @@ import java.util.Map;
  * scheduled examinations in the active timetable unless schedule clearing is requested.
  */
 public class ClassroomInUseException extends RuntimeException {
+    private static final long serialVersionUID = 1L;
     private final List<Map<String, Object>> usages;
 
     public ClassroomInUseException(String message, List<Map<String, Object>> usages) {

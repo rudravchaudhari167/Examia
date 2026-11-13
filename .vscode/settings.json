@@ -3,6 +3,22 @@
     "backend/src"
   ],
   "java.project.outputPath": "backend/bin",
-  "java.configuration.updateBuildConfiguration": "automatic"
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "backend/bin": true,
+    "backend/data": true,
+    "frontend/dist": true,
+    ".classpath": true,
+    ".project": true
+  },
+  "search.exclude": {
+    "backend/bin": true,
+    "backend/data": true,
+    "frontend/dist": true,
+    "frontend/node_modules": true
+  }
 }
 

@@ -21,6 +21,7 @@ if [ -n "$JAVA_HOME" ] && [ -x "$JAVA_HOME/bin/javac" ]; then
 fi
 
 echo "Compiling Examia Java Backend with $JAVAC targeting Java 21 LTS..."
+rm -rf backend/bin
 mkdir -p backend/bin
 $JAVAC --release 21 -d backend/bin $(find backend/src -name "*.java")
 echo "Compilation successful! Target bytecode: Java 21 LTS (Major version: 65)."

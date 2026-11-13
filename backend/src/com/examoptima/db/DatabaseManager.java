@@ -1002,6 +1002,8 @@ public class DatabaseManager {
      * cleanly across IDE language servers and compilers.
      */
     public static class ClassroomInUseException extends com.examoptima.db.ClassroomInUseException {
+        private static final long serialVersionUID = 1L;
+
         public ClassroomInUseException(String message, List<Map<String, Object>> usages) {
             super(message, usages);
         }

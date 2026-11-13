@@ -32,6 +32,7 @@ public class TimetablePlanner {
     private static final DateTimeFormatter TIME_12H = DateTimeFormatter.ofPattern("hh:mm a", Locale.US);
 
     public static class PlanningException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
         private final int statusCode;
 
         public PlanningException(int statusCode, String message) {
