@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 
-export default function Toast({ message, type = "success", onClose }) {
+function Toast({ message, type = "success", onClose }) {
   if (!message) return null;
 
   const getToastVisuals = () => {
@@ -52,4 +52,6 @@ export default function Toast({ message, type = "success", onClose }) {
     </div>
   );
 }
+
+export default memo(Toast);
 

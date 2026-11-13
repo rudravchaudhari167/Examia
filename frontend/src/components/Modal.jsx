@@ -1,11 +1,11 @@
-import React, { useEffect, useId, useRef } from 'react';
+import React, { useEffect, useId, useRef, memo } from 'react';
 import { X } from 'lucide-react';
 
 /**
  * Accessible native modal dialog wrapper using top-layer `showModal()` and CSS
  * `overscroll-behavior: contain` (no body scroll lock / layout shift).
  */
-export default function Modal({
+function Modal({
   isOpen,
   onClose,
   title,
@@ -116,3 +116,5 @@ export default function Modal({
     </dialog>
   );
 }
+
+export default memo(Modal);

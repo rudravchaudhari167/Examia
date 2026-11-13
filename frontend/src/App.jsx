@@ -126,62 +126,62 @@ export default function App() {
   // Dynamically compute conflict graph from persisted subjects & group enrolments
   const graph = useMemo(() => buildConflictGraph(subjects), [subjects]);
 
-  // --- CRUD Handlers backed by Java REST + SQLite ---
-  const handleAddSubject = async (payload) => {
+  // --- CRUD Handlers backed by Java REST + SQLite (Memoized with useCallback) ---
+  const handleAddSubject = useCallback(async (payload) => {
     const created = await api.createSubject(payload);
     await refreshFromBackend();
     showToast(`Subject ${created.code} added to database.`);
-  };
+  }, [refreshFromBackend, showToast]);
 
-  const handleEditSubject = async (payload) => {
+  const handleEditSubject = useCallback(async (payload) => {
     const updated = await api.updateSubject(payload);
     await refreshFromBackend();
     showToast(`Subject ${updated.code} updated.`);
-  };
+  }, [refreshFromBackend, showToast]);
 
-  const handleDeleteSubject = async (id) => {
+  const handleDeleteSubject = useCallback(async (id) => {
     const data = await api.deleteSubject(id);
     applyBootstrapState(data);
     showToast('Subject removed.');
-  };
+  }, [applyBootstrapState, showToast]);
 
-  const handleAddGroup = async (payload) => {
+  const handleAddGroup = useCallback(async (payload) => {
     const created = await api.createStudentGroup(payload);
     await refreshFromBackend();
     showToast(`Division "${created.name}" added.`);
-  };
+  }, [refreshFromBackend, showToast]);
 
-  const handleEditGroup = async (payload) => {
+  const handleEditGroup = useCallback(async (payload) => {
     const updated = await api.updateStudentGroup(payload);
     await refreshFromBackend();
     showToast(`Division "${updated.name}" updated.`);
-  };
+  }, [refreshFromBackend, showToast]);
 
-  const handleDeleteGroup = async (id) => {
+  const handleDeleteGroup = useCallback(async (id) => {
     const data = await api.deleteStudentGroup(id);
     applyBootstrapState(data);
     showToast('Division deleted.');
-  };
+  }, [applyBootstrapState, showToast]);
 
-  const handleUpdateEnrolments = async ({ subjectId, groupIds, groupId, subjectIds }) => {
+  const handleUpdateEnrolments = useCallback(async ({ subjectId, groupIds, groupId, subjectIds }) => {
     const data = await api.updateSubjectEnrolments({ subjectId, groupIds, groupId, subjectIds });
     applyBootstrapState(data);
     showToast('Subject enrolments saved and totals recalculated.');
-  };
+  }, [applyBootstrapState, showToast]);
 
-  const handleAddClassroom = async (payload) => {
+  const handleAddClassroom = useCallback(async (payload) => {
     const created = await api.createClassroom(payload);
     await refreshFromBackend();
     showToast(`Classroom "${created.name}" added.`);
-  };
+  }, [refreshFromBackend, showToast]);
 
-  const handleEditClassroom = async (payload) => {
+  const handleEditClassroom = useCallback(async (payload) => {
     const updated = await api.updateClassroom(payload);
     await refreshFromBackend();
     showToast(`Classroom "${updated.name}" updated.`);
-  };
+  }, [refreshFromBackend, showToast]);
 
-  const handleDeleteClassroom = async (id, clearSchedule = false) => {
+  const handleDeleteClassroom = useCallback(async (id, clearSchedule = false) => {
     const data = await api.deleteClassroom(id, clearSchedule);
     applyBootstrapState(data);
     showToast(
@@ -189,22 +189,22 @@ export default function App() {
         ? 'Cleared assigned schedule and deleted classroom.'
         : 'Classroom deleted.'
     );
-  };
+  }, [applyBootstrapState, showToast]);
 
-  const handleResetSampleData = async () => {
+  const handleResetSampleData = useCallback(async () => {
     const data = await api.resetSampleDataset();
     applyBootstrapState(data);
     showToast('Default sample dataset restored in database.');
-  };
+  }, [applyBootstrapState, showToast]);
 
-  const handleSaveConfig = async (nextConfig) => {
+  const handleSaveConfig = useCallback(async (nextConfig) => {
     const saved = await api.saveExamConfiguration(nextConfig);
     setConfig(saved);
     showToast('Examination configuration saved.');
     return saved;
-  };
+  }, [showToast]);
 
-  const handleGenerateTimetable = async ({ algorithm, maxSlots, config: incomingConfig }) => {
+  const handleGenerateTimetable = useCallback(async ({ algorithm, maxSlots, config: incomingConfig }) => {
     const res = await api.generateExaminationTimetable({
       algorithm,
       maxSlots,
@@ -220,7 +220,7 @@ export default function App() {
       } exams).`
     );
     return res;
-  };
+  }, [showToast]);
 
   return (
     <>

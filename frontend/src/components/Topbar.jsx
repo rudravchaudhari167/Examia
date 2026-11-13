@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, memo } from 'react';
 import { createPortal } from 'react-dom';
 import { Bell, Calendar, Clock, Menu } from 'lucide-react';
 import { UserAvatar } from './UserAvatar';
@@ -23,7 +23,7 @@ const TIME_FORMATTER = new Intl.DateTimeFormat('en-US', {
   hour12: true
 });
 
-export default function Topbar({
+function Topbar({
   activeTab
 }) {
   const [showNotifications, setShowNotifications] = useState(false);
@@ -341,3 +341,5 @@ export default function Topbar({
     </>
   );
 }
+
+export default memo(Topbar);

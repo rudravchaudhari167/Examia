@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState, memo } from 'react';
 import { 
   LayoutDashboard, Layers, Sparkles, ChevronRight
 } from 'lucide-react';
@@ -9,7 +9,7 @@ const NAV_ITEMS = [
   { id: 'generator', label: 'Timetable Generator', icon: Sparkles }
 ];
 
-export default function Sidebar({ 
+function Sidebar({ 
   activeTab, 
   setActiveTab
 }) {
@@ -194,4 +194,6 @@ export default function Sidebar({
     </aside>
   );
 }
+
+export default memo(Sidebar);
 
