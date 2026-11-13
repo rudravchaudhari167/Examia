@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * HTTP REST Server for Examia backed by persistent SQLite storage and
@@ -73,14 +73,7 @@ public class ExamOptimaServer {
         server.createContext("/api/solve/backtrack", new BacktrackHandler());
         server.createContext("/api/compare", new CompareHandler());
 
-        server.setExecutor(new Executor() {
-            @Override
-            public void execute(Runnable command) {
-                Thread workerThread = new Thread(command);
-                workerThread.setName("Worker-Thread-" + getNextRequestId());
-                workerThread.start();
-            }
-        });
+        server.setExecutor(Executors.newCachedThreadPool());
 
         server.start();
 

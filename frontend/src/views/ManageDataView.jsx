@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
+import React, { memo, useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
   BookOpen,
@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Edit3,
   Info,
+  Loader2,
   Plus,
   RotateCcw,
   Search,
@@ -28,19 +29,24 @@ function formatFormError(err, fallback = 'Operation failed.') {
     return trimmed && trimmed !== '[object Object]' ? trimmed : fallback;
   }
   if (err.payload) {
-    if (typeof err.payload === 'string' && err.payload.trim()) return err.payload.trim();
+    if (typeof err.payload === 'string' && err.payload.trim() && err.payload.trim() !== '[object Object]') {
+      return err.payload.trim();
+    }
     if (typeof err.payload.error === 'string' && err.payload.error.trim()) return err.payload.error.trim();
     if (typeof err.payload.message === 'string' && err.payload.message.trim()) return err.payload.message.trim();
   }
-  if (typeof err.error === 'string' && err.error.trim()) {
+  if (typeof err.error === 'string' && err.error.trim() && err.error.trim() !== '[object Object]') {
     return err.error.trim();
   }
   if (err.error && typeof err.error === 'object') {
     if (typeof err.error.message === 'string' && err.error.message.trim()) {
       return err.error.message.trim();
     }
+    if (typeof err.error.error === 'string' && err.error.error.trim()) {
+      return err.error.error.trim();
+    }
   }
-  if (typeof err.message === 'string' && err.message.trim() && err.message !== '[object Object]') {
+  if (typeof err.message === 'string' && err.message.trim() && err.message.trim() !== '[object Object]') {
     return err.message.trim();
   }
   if (err.message && typeof err.message === 'object') {
@@ -51,14 +57,13 @@ function formatFormError(err, fallback = 'Operation failed.') {
       return err.message.error.trim();
     }
   }
-  try {
-    const json = JSON.stringify(err);
-    if (json && json !== '{}') return json;
-  } catch {}
+  if (typeof err.statusText === 'string' && err.statusText.trim()) {
+    return err.statusText.trim();
+  }
   return fallback;
 }
 
-export default function ManageDataView({
+function ManageDataView({
   subjects,
   studentGroups,
   classrooms,
@@ -516,7 +521,7 @@ export default function ManageDataView({
 
       {/* A. SUBJECTS */}
       {activeTab === 'subjects' && (
-        <div role="tabpanel" id={getPanelId('subjects')} aria-labelledby={getTabId('subjects')}>
+        <div role="tabpanel" id={getPanelId('subjects')} aria-labelledby={getTabId('subjects')} className="animate-fade-in">
           <section className="card-premium p-4 sm:p-6 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
@@ -722,7 +727,7 @@ export default function ManageDataView({
 
       {/* B. DIVISIONS */}
       {activeTab === 'groups' && (
-        <div role="tabpanel" id={getPanelId('groups')} aria-labelledby={getTabId('groups')}>
+        <div role="tabpanel" id={getPanelId('groups')} aria-labelledby={getTabId('groups')} className="animate-fade-in">
           <section className="card-premium p-4 sm:p-6 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
@@ -912,7 +917,7 @@ export default function ManageDataView({
 
       {/* C. CLASSROOM MANAGEMENT */}
       {activeTab === 'classrooms' && (
-        <div role="tabpanel" id={getPanelId('classrooms')} aria-labelledby={getTabId('classrooms')}>
+        <div role="tabpanel" id={getPanelId('classrooms')} aria-labelledby={getTabId('classrooms')} className="animate-fade-in">
           <section className="card-premium p-4 sm:p-6 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
@@ -1197,9 +1202,10 @@ export default function ManageDataView({
             <button
               type="submit"
               disabled={isBusy}
-              className="btn-primary min-h-[44px] px-5 py-2 text-xs font-semibold"
+              className="btn-primary min-h-[44px] px-5 py-2 text-xs font-semibold inline-flex items-center gap-1.5"
             >
-              {editingSubject ? 'Save Changes' : 'Add Subject'}
+              {isBusy && <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />}
+              <span>{editingSubject ? 'Save Changes' : 'Add Subject'}</span>
             </button>
           </div>
         </form>
@@ -1270,9 +1276,10 @@ export default function ManageDataView({
             <button
               type="submit"
               disabled={isBusy}
-              className="btn-primary min-h-[44px] px-5 py-2 text-xs font-semibold"
+              className="btn-primary min-h-[44px] px-5 py-2 text-xs font-semibold inline-flex items-center gap-1.5"
             >
-              {editingGroup ? 'Save Changes' : 'Add Division'}
+              {isBusy && <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />}
+              <span>{editingGroup ? 'Save Changes' : 'Add Division'}</span>
             </button>
           </div>
         </form>
@@ -1370,9 +1377,10 @@ export default function ManageDataView({
             <button
               type="submit"
               disabled={isBusy}
-              className="btn-primary min-h-[44px] px-5 py-2 text-xs font-semibold"
+              className="btn-primary min-h-[44px] px-5 py-2 text-xs font-semibold inline-flex items-center gap-1.5"
             >
-              {editingClassroom ? 'Save Changes' : 'Add Classroom'}
+              {isBusy && <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />}
+              <span>{editingClassroom ? 'Save Changes' : 'Add Classroom'}</span>
             </button>
           </div>
         </form>
@@ -1399,9 +1407,10 @@ export default function ManageDataView({
               type="button"
               disabled={isBusy}
               onClick={handleConfirmAction}
-              className="min-h-[44px] px-4 py-2 rounded-xl bg-[#642F43] text-[#FDF8FA] text-xs font-semibold hover:bg-[#4A1F30] transition-colors"
+              className="min-h-[44px] px-4 py-2 rounded-xl bg-[#642F43] text-[#FDF8FA] text-xs font-semibold hover:bg-[#4A1F30] transition-colors inline-flex items-center justify-center gap-1.5"
             >
-              {confirmAction?.confirmLabel || 'Confirm'}
+              {isBusy && <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />}
+              <span>{confirmAction?.confirmLabel || 'Confirm'}</span>
             </button>
           </div>
         </div>
@@ -1409,3 +1418,5 @@ export default function ManageDataView({
     </div>
   );
 }
+
+export default memo(ManageDataView);

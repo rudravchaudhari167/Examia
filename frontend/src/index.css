@@ -165,7 +165,7 @@ table {
   }
 
   .btn-primary:active {
-    transform: translateY(0);
+    transform: scale(0.98);
     background-color: #441C2B;
   }
 
@@ -188,13 +188,17 @@ table {
     align-items: center;
     gap: 0.5rem;
     box-shadow: var(--surface-highlight), var(--shadow-sm);
-    transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   }
 
   .btn-secondary:hover {
     background-color: #F3E1E7;
     border-color: #642F43;
     transform: translateY(-1px);
+  }
+
+  .btn-secondary:active {
+    transform: scale(0.98);
   }
 
   .btn-ghost {
@@ -315,6 +319,28 @@ table {
 
 .animate-fade-in {
   animation: fadeIn 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Smooth Page Transitions */
+@keyframes examiaPageFade {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 5px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.examia-page-fade {
+  animation: examiaPageFade 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity, transform;
   @media (prefers-reduced-motion: reduce) {
     animation: none;
     opacity: 1;
@@ -536,9 +562,27 @@ dialog.examia-dialog:modal {
   max-height: calc(100dvh - 1.5rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
 }
 
+@keyframes examiaModalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+}
+
 dialog.examia-dialog[open] {
   display: flex;
   flex-direction: column;
+  animation: examiaModalEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  dialog.examia-dialog[open] {
+    animation: none;
+  }
 }
 
 dialog.examia-dialog::backdrop {

@@ -244,7 +244,7 @@ export default function App() {
             ref={mainScrollRef}
             className="examia-main-scroll flex-1 overflow-y-auto overscroll-y-contain px-3.5 sm:px-6 lg:px-10 py-4 sm:py-6 examia-safe-pb"
           >
-            <div key={renderedTab} className="max-w-6xl mx-auto space-y-4">
+            <div key={renderedTab} className="max-w-6xl mx-auto space-y-4 examia-page-fade">
               {backendError && (
                 <div
                   role="alert"

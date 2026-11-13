@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { memo } from 'react';
 
-export default function StatCard({ 
+function StatCard({ 
   title, 
   value, 
   subtitle, 
@@ -49,7 +49,7 @@ export default function StatCard({
   const isTextValue = typeof value === 'string' && value.length > 3;
 
   return (
-    <div className={`h-full p-4 rounded-[18px] ${styles.bg} border ${styles.borderColor} shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_10px_22px_-6px_rgba(100,47,67,0.10)] hover:-translate-y-0.5 hover:border-[#C58E9B]/85 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_16px_28px_-6px_rgba(100,47,67,0.16)] transition-all duration-200 flex flex-col justify-between min-w-0 overflow-hidden`}>
+    <div className={`h-full p-4 rounded-[18px] ${styles.bg} border ${styles.borderColor} shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_10px_22px_-6px_rgba(100,47,67,0.10)] hover:-translate-y-0.5 hover:border-[#C58E9B]/85 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_16px_28px_-6px_rgba(100,47,67,0.16)] transition-transform transition-shadow duration-200 ease-out flex flex-col justify-between min-w-0 overflow-hidden`}>
       <div className="flex items-start justify-between gap-2.5 min-w-0">
         <div className="min-w-0 flex-1 text-left">
           <p className="text-[10.5px] font-semibold text-[#6F4253] uppercase tracking-[0.05em] leading-snug">
@@ -74,4 +74,6 @@ export default function StatCard({
     </div>
   );
 }
+
+export default memo(StatCard);
 

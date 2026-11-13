@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, memo } from 'react';
 import {
   AlertCircle,
   Building2,
@@ -67,7 +67,7 @@ function buildSessionStartTimes(cfg) {
   });
 }
 
-export default function TimetableGeneratorView({
+function TimetableGeneratorView({
   subjects,
   classrooms = [],
   graph,
@@ -83,6 +83,7 @@ export default function TimetableGeneratorView({
   );
   const [maxSlotsInput, setMaxSlotsInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationPhase, setGenerationPhase] = useState('');
   const [isSavingConfig, setIsSavingConfig] = useState(false);
   const [statusFeedback, setStatusFeedback] = useState(null);
   const [configFeedback, setConfigFeedback] = useState(null);
@@ -97,6 +98,31 @@ export default function TimetableGeneratorView({
     numDays: String(config?.numDays ?? 5),
     maxExamsPerDay: String(config?.maxExamsPerDay ?? 2),
   }));
+
+  // Reassuring dynamic status updates during algorithm execution
+  useEffect(() => {
+    if (!isGenerating) {
+      setGenerationPhase('');
+      return;
+    }
+    const startTime = Date.now();
+    setGenerationPhase('Analyzing conflict graph & verifying division constraints…');
+
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      if (elapsed > 2400) {
+        setGenerationPhase(
+          selectedAlgo === 'backtracking'
+            ? 'Deep state exploration: solving multi-exam sessions & room capacities…'
+            : 'Allocating optimal classroom capacities across daily exam sessions…'
+        );
+      } else if (elapsed > 800) {
+        setGenerationPhase('Evaluating chromatic coloring & mapping examination time slots…');
+      }
+    }, 400);
+
+    return () => clearInterval(interval);
+  }, [isGenerating, selectedAlgo]);
 
   useEffect(() => {
     if (!config) return;
@@ -903,6 +929,17 @@ export default function TimetableGeneratorView({
           </button>
         </div>
 
+        {isGenerating && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="animate-fade-in p-3.5 rounded-2xl border bg-[#FAF0F3] border-[#C58E9B] text-[#642F43] flex items-center gap-3 text-xs sm:text-sm font-medium"
+          >
+            <Loader2 className="w-4 h-4 animate-spin text-[#642F43] shrink-0" aria-hidden="true" />
+            <span>{generationPhase || 'Solving constraints & allocating classrooms…'}</span>
+          </div>
+        )}
+
         {statusFeedback && (
           <div
             role="alert"
@@ -1127,7 +1164,7 @@ export default function TimetableGeneratorView({
                         </tr>
 
                         {isExpanded && (
-                          <tr className="bg-[#FDF9FA]">
+                          <tr className="bg-[#FDF9FA] animate-fade-in">
                             <td colSpan={5} className="px-4 py-3 border-t border-[#EED8DF]">
                               <div className="rounded-xl border border-[#C58E9B]/45 bg-white overflow-hidden">
                                 <table className="w-full text-left border-collapse text-xs">
@@ -1243,7 +1280,7 @@ export default function TimetableGeneratorView({
                     </button>
 
                     {isExpanded && (
-                      <div className="space-y-2 pt-1">
+                      <div className="space-y-2 pt-1 animate-fade-in">
                         {rooms.map((room) => (
                           <div
                             key={room.id || room.classroomId || room.classroomName}
@@ -1454,3 +1491,5 @@ export default function TimetableGeneratorView({
     </div>
   );
 }
+
+export default memo(TimetableGeneratorView);

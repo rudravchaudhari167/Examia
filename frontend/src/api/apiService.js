@@ -54,66 +54,84 @@ function isBackendUnavailableStatus(status, data) {
   return false;
 }
 
+const inFlightRequests = new Map();
+
 async function apiRequest(path, options = {}, fallbackFn = null) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs || 8000);
+  const method = (options.method || 'GET').toUpperCase();
+  const requestKey = `${method}:${path}:${options.body ? JSON.stringify(options.body) : ''}`;
 
-  try {
-    const res = await fetch(`${API_BASE}${path}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        ...(options.headers || {}),
-      },
-      method: options.method || 'GET',
-      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-      signal: controller.signal,
-    });
+  if (inFlightRequests.has(requestKey)) {
+    return inFlightRequests.get(requestKey);
+  }
 
-    const text = await res.text();
-    let data = null;
-    if (text) {
-      try {
-        data = JSON.parse(text);
-      } catch {
-        data = { raw: text };
+  const executionPromise = (async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs || 8000);
+
+    try {
+      const res = await fetch(`${API_BASE}${path}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          ...(options.headers || {}),
+        },
+        method: options.method || 'GET',
+        body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+        signal: controller.signal,
+      });
+
+      const text = await res.text();
+      let data = null;
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = { raw: text };
+        }
       }
-    }
 
-    if (!res.ok) {
-      if (fallbackFn && isBackendUnavailableStatus(res.status, data)) {
+      if (!res.ok) {
+        if (fallbackFn && isBackendUnavailableStatus(res.status, data)) {
+          return fallbackFn();
+        }
+        const err = new Error(extractErrorMessage(data, res.status));
+        err.status = res.status;
+        err.payload = data;
+        throw err;
+      }
+
+      if (fallbackFn && data && typeof data.raw === 'string') {
         return fallbackFn();
       }
-      const err = new Error(extractErrorMessage(data, res.status));
-      err.status = res.status;
-      err.payload = data;
+
+      return data;
+    } catch (err) {
+      const isNetworkOrAbort =
+        err?.name === 'AbortError' || err instanceof TypeError || err?.isNetworkError;
+      if (isNetworkOrAbort && fallbackFn) {
+        return fallbackFn();
+      }
+      if (err?.name === 'AbortError') {
+        throw new Error('Backend request timed out. Ensure the Java server is running on port 8080.');
+      }
+      if (err instanceof TypeError) {
+        const connErr = new Error(
+          'Cannot connect to the Examia Java backend server (port 8080). Start it with ./run-backend.sh or ./start.sh.'
+        );
+        connErr.isNetworkError = true;
+        throw connErr;
+      }
       throw err;
+    } finally {
+      clearTimeout(timeoutId);
     }
+  })();
 
-    if (fallbackFn && data && typeof data.raw === 'string') {
-      return fallbackFn();
-    }
-
-    return data;
-  } catch (err) {
-    const isNetworkOrAbort =
-      err?.name === 'AbortError' || err instanceof TypeError || err?.isNetworkError;
-    if (isNetworkOrAbort && fallbackFn) {
-      return fallbackFn();
-    }
-    if (err?.name === 'AbortError') {
-      throw new Error('Backend request timed out. Ensure the Java server is running on port 8080.');
-    }
-    if (err instanceof TypeError) {
-      const connErr = new Error(
-        'Cannot connect to the Examia Java backend server (port 8080). Start it with ./run-backend.sh or ./start.sh.'
-      );
-      connErr.isNetworkError = true;
-      throw connErr;
-    }
-    throw err;
+  inFlightRequests.set(requestKey, executionPromise);
+  try {
+    return await executionPromise;
   } finally {
-    clearTimeout(timeoutId);
+    inFlightRequests.delete(requestKey);
   }
 }
 

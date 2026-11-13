@@ -33,7 +33,7 @@ const STEPS = [
   },
 ];
 
-export default function DashboardView({
+function DashboardView({
   subjects,
   studentGroups,
   classrooms,
@@ -50,15 +50,17 @@ export default function DashboardView({
       });
     };
 
-    const intervalId = setInterval(syncGreeting, 1000);
+    const intervalId = setInterval(syncGreeting, 60000);
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') syncGreeting();
     };
     document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', syncGreeting);
 
     return () => {
       clearInterval(intervalId);
       document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', syncGreeting);
     };
   }, []);
 
@@ -197,3 +199,5 @@ export default function DashboardView({
     </div>
   );
 }
+
+export default React.memo(DashboardView);

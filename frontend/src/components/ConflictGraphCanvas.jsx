@@ -1,11 +1,11 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, memo } from 'react';
 import { 
   Maximize2, RotateCcw, Info, Layers, Eye, ShieldAlert,
   Sparkles, CheckCircle2, AlertTriangle, Users, ZoomIn, ZoomOut
 } from 'lucide-react';
 import { SLOT_PALETTES } from '../data/defaultData';
 
-export default function ConflictGraphCanvas({ 
+function ConflictGraphCanvas({ 
   graph, 
   assignments = {}, 
   onRebuild, 
@@ -122,19 +122,34 @@ export default function ConflictGraphCanvas({
     );
   }, [selectedNodeId, graph]);
 
-  // Get node color based on assigned slot
+  // Precomputed node color mapping based on assigned slots for O(1) rendering
+  const nodeVisualsMap = useMemo(() => {
+    const map = new Map();
+    if (!graph || !graph.subjects) return map;
+    graph.subjects.forEach((subj) => {
+      const slot = assignments[subj.id];
+      if (slot !== undefined && slot !== null && slot >= 0) {
+        const palette = SLOT_PALETTES[slot % SLOT_PALETTES.length];
+        map.set(subj.id, {
+          fill: palette.fillColor,
+          stroke: palette.strokeColor,
+          textColor: palette.textColor,
+          slotLabel: `Slot ${slot + 1}`
+        });
+      } else {
+        map.set(subj.id, {
+          fill: "#FAF0F3",
+          stroke: "#C58E9B",
+          textColor: "#642F43",
+          slotLabel: "Unscheduled"
+        });
+      }
+    });
+    return map;
+  }, [graph, assignments]);
+
   const getNodeVisuals = (nodeId) => {
-    const slot = assignments[nodeId];
-    if (slot !== undefined && slot !== null && slot >= 0) {
-      const palette = SLOT_PALETTES[slot % SLOT_PALETTES.length];
-      return {
-        fill: palette.fillColor,
-        stroke: palette.strokeColor,
-        textColor: palette.textColor,
-        slotLabel: `Slot ${slot + 1}`
-      };
-    }
-    return {
+    return nodeVisualsMap.get(nodeId) || {
       fill: "#FAF0F3",
       stroke: "#C58E9B",
       textColor: "#642F43",
@@ -566,4 +581,6 @@ export default function ConflictGraphCanvas({
     </div>
   );
 }
+
+export default memo(ConflictGraphCanvas);
 
