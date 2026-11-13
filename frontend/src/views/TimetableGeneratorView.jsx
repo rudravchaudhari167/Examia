@@ -24,7 +24,6 @@ import {
 } from '../algorithms/roomAllocator';
 import { validateSchedule } from '../algorithms/graph';
 import { SLOT_PALETTES } from '../data/defaultData';
-import ConflictGraphCanvas from '../components/ConflictGraphCanvas';
 
 function escapeCsvCell(value) {
   const str = String(value ?? '');
@@ -473,8 +472,6 @@ function TimetableGeneratorView({
     window.print();
   };
 
-  const hasBothComparisonRuns = Boolean(algoRuns?.greedy && algoRuns?.backtracking);
-
   const activeAlgorithmLabel = latestTimetable?.algorithmName
     ? latestTimetable.algorithmName.includes('Backtracking')
       ? 'Backtracking Coloring'
@@ -495,7 +492,7 @@ function TimetableGeneratorView({
           Timetable Generator
         </h1>
         <p className="text-sm text-[#6F4253]">
-          Configure examination timing, choose a graph coloring algorithm, generate date/time schedules with classroom seat allocation, and inspect conflict insights.
+          Configure examination timing, choose a graph coloring algorithm, and generate conflict-free schedules with classroom seat allocation.
         </p>
       </header>
 
@@ -1305,188 +1302,6 @@ function TimetableGeneratorView({
             </div>
           </>
         )}
-      </section>
-
-      {/* STEP 5 — DAA ALGORITHM VISUALISATION */}
-      <section className="no-print space-y-3" aria-label="Algorithm visualisation">
-        <div className="px-1">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#7D5563]">
-            Step 5
-          </span>
-          <h2 className="text-base sm:text-lg font-serif font-bold text-[#642F43]">
-            DAA Algorithm Visualisation
-          </h2>
-        </div>
-
-        {/* Conflict Graph Section */}
-        <details className="examia-details card-premium px-4 sm:px-6 py-2">
-          <summary className="examia-summary text-sm sm:text-base font-serif font-bold text-[#642F43]">
-            <ChevronRight className="examia-chevron w-4 h-4 shrink-0" aria-hidden="true" />
-            <span>Conflict Graph</span>
-          </summary>
-
-          <div className="pb-4 pt-2 space-y-4 border-t border-[#C58E9B]/25">
-            <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs text-[#6F4253]">
-              <li className="p-3 rounded-xl bg-[#FAF0F3]/80 border border-[#C58E9B]/30">
-                <strong className="text-[#361522] block mb-0.5">Vertices (Subjects)</strong>
-                Each vertex represents a scheduled examination subject.
-              </li>
-              <li className="p-3 rounded-xl bg-[#FAF0F3]/80 border border-[#C58E9B]/30">
-                <strong className="text-[#361522] block mb-0.5">Edges (Shared Divisions)</strong>
-                Edges connect subjects sharing any enrolled division.
-              </li>
-              <li className="p-3 rounded-xl bg-[#FAF0F3]/80 border border-[#C58E9B]/30">
-                <strong className="text-[#361522] block mb-0.5">Colors (Exam Slots)</strong>
-                Distinct colors denote separate non-conflicting time slots.
-              </li>
-              <li className="p-3 rounded-xl bg-[#FAF0F3]/80 border border-[#C58E9B]/30">
-                <strong className="text-[#361522] block mb-0.5">Greedy vs Backtracking</strong>
-                Greedy assigns first-free slots fast; Backtracking seeks minimal valid slots.
-              </li>
-            </ul>
-
-            <ConflictGraphCanvas
-              graph={graph}
-              assignments={latestTimetable?.assignments || {}}
-              title="Subject Conflict Network"
-            />
-          </div>
-        </details>
-
-        {/* Algorithm Information Section */}
-        <details className="examia-details card-premium px-4 sm:px-6 py-2">
-          <summary className="examia-summary text-sm sm:text-base font-serif font-bold text-[#642F43]">
-            <ChevronRight className="examia-chevron w-4 h-4 shrink-0" aria-hidden="true" />
-            <span>Algorithm Information</span>
-          </summary>
-
-          <div className="pb-4 pt-2 space-y-4 border-t border-[#C58E9B]/25 text-xs sm:text-sm text-[#6F4253]">
-            {!latestTimetable ? (
-              <p>
-                Generate an examination timetable above to inspect live algorithm metrics, conflict validation, and Greedy vs. Backtracking comparison.
-              </p>
-            ) : (
-              <>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5">
-                  <div className="p-3 rounded-xl bg-[#FAF0F3]/85 border border-[#C58E9B]/35">
-                    <span className="text-[11px] uppercase tracking-wider font-semibold text-[#7D5563] block">
-                      Algorithm
-                    </span>
-                    <span className="text-sm font-serif font-bold text-[#642F43] mt-0.5 block">
-                      {activeAlgorithmLabel}
-                    </span>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-[#FAF0F3]/85 border border-[#C58E9B]/35">
-                    <span className="text-[11px] uppercase tracking-wider font-semibold text-[#7D5563] block">
-                      Subjects
-                    </span>
-                    <span className="text-lg font-serif font-bold text-[#642F43]">
-                      {subjects.length}
-                    </span>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-[#FAF0F3]/85 border border-[#C58E9B]/35">
-                    <span className="text-[11px] uppercase tracking-wider font-semibold text-[#7D5563] block">
-                      Conflicts
-                    </span>
-                    <span className="text-lg font-serif font-bold text-[#642F43]">
-                      {graph.edgeCount}
-                    </span>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-[#FAF0F3]/85 border border-[#C58E9B]/35">
-                    <span className="text-[11px] uppercase tracking-wider font-semibold text-[#7D5563] block">
-                      Time Slots Used
-                    </span>
-                    <span className="text-lg font-serif font-bold text-[#642F43]">
-                      {latestTimetable.numSlots}
-                    </span>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-[#FAF0F3]/85 border border-[#C58E9B]/35">
-                    <span className="text-[11px] uppercase tracking-wider font-semibold text-[#7D5563] block">
-                      Execution Time
-                    </span>
-                    <span className="text-base font-mono font-bold text-[#642F43]">
-                      {Number(latestTimetable.executionTimeMs ?? 0).toFixed(3)} ms
-                    </span>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-[#FAF0F3]/85 border border-[#C58E9B]/35">
-                    <span className="text-[11px] uppercase tracking-wider font-semibold text-[#7D5563] block">
-                      Valid Status
-                    </span>
-                    <span className="text-sm font-bold text-[#642F43] block mt-0.5">
-                      {validation.isValid && latestTimetable.isValid ? 'Conflict-Free' : 'Needs Re-run'}
-                    </span>
-                  </div>
-                </div>
-
-                {hasBothComparisonRuns ? (
-                  <div className="space-y-2 pt-1">
-                    <h3 className="text-sm font-serif font-bold text-[#642F43]">
-                      Greedy vs. Backtracking Comparison (Current Dataset)
-                    </h3>
-                    <div className="overflow-x-auto rounded-2xl border border-[#C58E9B]/40">
-                      <table className="w-full text-left border-collapse text-xs sm:text-sm">
-                        <thead>
-                          <tr className="bg-[#F4E4E9] text-[#642F43] text-xs uppercase tracking-wider border-b border-[#C58E9B]/40">
-                            <th className="py-2.5 px-3.5 font-bold">Algorithm</th>
-                            <th className="py-2.5 px-3.5 font-bold">Time Slots Used</th>
-                            <th className="py-2.5 px-3.5 font-bold">Execution Time</th>
-                            <th className="py-2.5 px-3.5 font-bold">Operations / Calls</th>
-                            <th className="py-2.5 px-3.5 font-bold">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#EED8DF] bg-white">
-                          <tr>
-                            <td className="py-2.5 px-3.5 font-semibold text-[#361522]">
-                              Greedy Coloring
-                            </td>
-                            <td className="py-2.5 px-3.5 font-mono font-bold text-[#642F43]">
-                              {algoRuns.greedy.numSlots}
-                            </td>
-                            <td className="py-2.5 px-3.5 font-mono">
-                              {Number(algoRuns.greedy.executionTimeMs ?? 0).toFixed(3)} ms
-                            </td>
-                            <td className="py-2.5 px-3.5 font-mono">
-                              {algoRuns.greedy.operationsCount ?? '—'} ops
-                            </td>
-                            <td className="py-2.5 px-3.5 font-semibold text-[#642F43]">
-                              {algoRuns.greedy.isValid ? 'Conflict-Free' : 'Invalid'}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="py-2.5 px-3.5 font-semibold text-[#361522]">
-                              Backtracking Coloring
-                            </td>
-                            <td className="py-2.5 px-3.5 font-mono font-bold text-[#642F43]">
-                              {algoRuns.backtracking.numSlots}
-                            </td>
-                            <td className="py-2.5 px-3.5 font-mono">
-                              {Number(algoRuns.backtracking.executionTimeMs ?? 0).toFixed(3)} ms
-                            </td>
-                            <td className="py-2.5 px-3.5 font-mono">
-                              {algoRuns.backtracking.operationsCount ?? '—'} calls
-                            </td>
-                            <td className="py-2.5 px-3.5 font-semibold text-[#642F43]">
-                              {algoRuns.backtracking.isValid ? 'Valid Optimal' : 'Invalid'}
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-xs italic text-[#7D5563]">
-                    Tip: Execute both Greedy Coloring and Backtracking Coloring on this dataset to display the live comparison table here.
-                  </p>
-                )}
-              </>
-            )}
-          </div>
-        </details>
       </section>
     </div>
   );
