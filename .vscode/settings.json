@@ -4,6 +4,14 @@
   ],
   "java.project.outputPath": "backend/bin",
   "java.configuration.updateBuildConfiguration": "automatic",
+  "java.jdt.ls.java.home": "/Library/Java/JavaVirtualMachines/jdk-26.jdk/Contents/Home",
+  "java.configuration.runtimes": [
+    {
+      "name": "JavaSE-21",
+      "path": "/Library/Java/JavaVirtualMachines/jdk-26.jdk/Contents/Home",
+      "default": true
+    }
+  ],
   "files.exclude": {
     "**/.git": true,
     "**/.DS_Store": true,
@@ -22,4 +30,3 @@
     "frontend/dist": true
   }
 }
-

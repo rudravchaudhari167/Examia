@@ -15,21 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Module I, II & IV: Inheritance, Collections, and Greedy DAA Algorithm.
- * 
- * DAA ALGORITHM: GREEDY GRAPH COLORING (Welsh-Powell Heuristic)
- * 
- * Algorithm Steps:
- * 1. Calculate degree for all vertices in the conflict graph.
- * 2. Sort subjects in descending order of their vertex degrees.
- * 3. Pick the highest-degree uncolored subject.
- * 4. Scan colors 0, 1, 2... and assign the lowest non-conflicting color.
- * 5. Repeat until every subject has an examination time slot.
- * 
- * Time Complexity: O(V log V + E)
- * Space Complexity: O(V)
- */
 public class GreedyColoring extends BaseColoringAlgorithm {
 
     // Constructor using super keyword (Module II)
@@ -44,14 +29,13 @@ public class GreedyColoring extends BaseColoringAlgorithm {
             return algorithm.schedule(graph);
         } catch (SchedulingException e) {
             return new ColoringResult(
-                algorithm.getAlgorithmName(),
-                new HashMap<String, Integer>(),
-                0,
-                0,
-                0,
-                false,
-                "Scheduling error: " + e.getMessage()
-            );
+                    algorithm.getAlgorithmName(),
+                    new HashMap<String, Integer>(),
+                    0,
+                    0,
+                    0,
+                    false,
+                    "Scheduling error: " + e.getMessage());
         }
     }
 
@@ -72,14 +56,13 @@ public class GreedyColoring extends BaseColoringAlgorithm {
         if (subjects.isEmpty()) {
             long duration = System.nanoTime() - startTime;
             return new ColoringResult(
-                this.algorithmName,
-                new HashMap<String, Integer>(),
-                0,
-                duration,
-                0,
-                true,
-                "Graph has 0 subjects - 0 slots needed."
-            );
+                    this.algorithmName,
+                    new HashMap<String, Integer>(),
+                    0,
+                    duration,
+                    0,
+                    true,
+                    "Graph has 0 subjects - 0 slots needed.");
         }
 
         final Map<String, Integer> degrees = graph.getDegrees();
@@ -146,14 +129,13 @@ public class GreedyColoring extends BaseColoringAlgorithm {
         boolean isValid = validateColoring(graph, assignments);
 
         return new ColoringResult(
-            this.algorithmName,
-            assignments,
-            numSlots,
-            executionTimeNanos,
-            operationsCount,
-            isValid,
-            isValid ? "Valid conflict-free schedule generated using " + numSlots + " time slots."
-                    : "Conflict constraint violated!"
-        );
+                this.algorithmName,
+                assignments,
+                numSlots,
+                executionTimeNanos,
+                operationsCount,
+                isValid,
+                isValid ? "Valid conflict-free schedule generated using " + numSlots + " time slots."
+                        : "Conflict constraint violated!");
     }
 }

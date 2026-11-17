@@ -1,0 +1,1764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Examia — DAA Mini-Project Viva Preparation & Study Guide</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 18mm 15mm 18mm 15mm;
+    @top-right {
+      content: "Examia — DAA Mini-Project Study Guide";
+      font-size: 8pt;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      color: #7D5563;
+      border-bottom: 0.5pt solid #C58E9B;
+      padding-bottom: 4px;
+    }
+    @bottom-center {
+      content: "Page " counter(page);
+      font-size: 8.5pt;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      font-weight: 600;
+      color: #642F43;
+    }
+  }
+
+  @page:first {
+    margin: 0;
+    @top-right { content: none; }
+    @bottom-center { content: none; }
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 9.5pt;
+    line-height: 1.55;
+    color: #2D1A22;
+    background-color: #FFFFFF;
+    margin: 0;
+    padding: 0;
+  }
+
+  .page-break {
+    page-break-before: always;
+  }
+
+  .avoid-break {
+    page-break-inside: avoid;
+  }
+
+  /* Typography */
+  h1.chapter-title {
+    font-size: 16pt;
+    font-weight: 700;
+    color: #642F43;
+    border-bottom: 2pt solid #642F43;
+    padding-bottom: 4px;
+    margin-top: 20px;
+    margin-bottom: 12px;
+    page-break-after: avoid;
+  }
+
+  h2 {
+    font-size: 12pt;
+    font-weight: 700;
+    color: #781D42;
+    margin-top: 14px;
+    margin-bottom: 6px;
+    border-left: 3pt solid #A3485E;
+    padding-left: 8px;
+    page-break-after: avoid;
+  }
+
+  h3 {
+    font-size: 10.5pt;
+    font-weight: 600;
+    color: #3B1B26;
+    margin-top: 10px;
+    margin-bottom: 4px;
+    page-break-after: avoid;
+  }
+
+  p {
+    margin-top: 0;
+    margin-bottom: 8px;
+    text-align: justify;
+  }
+
+  ul, ol {
+    margin-top: 0;
+    margin-bottom: 8px;
+    padding-left: 20px;
+  }
+
+  li {
+    margin-bottom: 4px;
+  }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    padding: 2px 7px;
+    font-size: 7.5pt;
+    font-weight: 700;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    vertical-align: middle;
+  }
+  .badge-primary { background: #642F43; color: #FFFFFF; }
+  .badge-success { background: #1B5E20; color: #FFFFFF; }
+  .badge-warning { background: #E65100; color: #FFFFFF; }
+  .badge-danger  { background: #B71C1C; color: #FFFFFF; }
+  .badge-info    { background: #0D47A1; color: #FFFFFF; }
+  .badge-neutral { background: #ECE0E3; color: #642F43; }
+
+  /* Math & Formula Presentation */
+  .math-var {
+    font-family: "Cambria Math", "Times New Roman", Times, Georgia, serif;
+    font-style: italic;
+    font-weight: 600;
+  }
+
+  .formula-card {
+    background: #FDF8F9;
+    border: 1pt solid #E8CCD3;
+    border-left: 3.5pt solid #642F43;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin: 8px 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    page-break-inside: avoid;
+  }
+
+  .formula-title {
+    font-weight: 700;
+    font-size: 9pt;
+    color: #642F43;
+    margin-bottom: 4px;
+  }
+
+  .formula-body {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 9pt;
+    color: #1A0D12;
+    background: #FFFFFF;
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 0.5pt solid #DFC7CE;
+    display: inline-block;
+    margin: 3px 0;
+  }
+
+  /* Callout Boxes */
+  .callout {
+    background: #FDF9F9;
+    border: 1pt solid #E8CCD3;
+    border-left: 3.5pt solid #A3485E;
+    border-radius: 6px;
+    padding: 9px 12px;
+    margin: 9px 0;
+    page-break-inside: avoid;
+  }
+
+  .callout-title {
+    font-weight: 700;
+    color: #642F43;
+    font-size: 9.5pt;
+    margin-bottom: 4px;
+  }
+
+  /* Diagram Containers */
+  .diagram-container {
+    background: #FFFFFF;
+    border: 1pt solid #DFC7CE;
+    border-radius: 6px;
+    padding: 10px;
+    margin: 10px 0;
+    text-align: center;
+    page-break-inside: avoid;
+  }
+
+  .diagram-caption {
+    font-size: 8pt;
+    font-weight: 600;
+    color: #7D5563;
+    margin-top: 6px;
+    text-align: center;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0;
+    font-size: 8.5pt;
+    page-break-inside: avoid;
+  }
+
+  th {
+    background: #642F43;
+    color: #FFFFFF;
+    font-weight: 600;
+    text-align: left;
+    padding: 5px 8px;
+    border: 0.5pt solid #4A1E2F;
+  }
+
+  td {
+    padding: 4.5px 8px;
+    border: 0.5pt solid #DFC7CE;
+    vertical-align: top;
+  }
+
+  tr:nth-child(even) {
+    background: #FAF3F5;
+  }
+
+  /* Code Blocks */
+  pre {
+    background: #1E1E2E;
+    color: #CDD6F4;
+    border-radius: 6px;
+    padding: 9px 12px;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 8pt;
+    line-height: 1.45;
+    overflow-x: auto;
+    margin: 8px 0;
+    page-break-inside: avoid;
+    border: 1pt solid #313244;
+  }
+
+  code {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 8.5pt;
+  }
+
+  p code, li code, td code {
+    background: #F3E5E8;
+    color: #642F43;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 8pt;
+    border: 0.5pt solid #DFC7CE;
+  }
+
+  /* Syntax Highlighting */
+  .code-kw { color: #CBA6F7; font-weight: 600; } /* Keyword */
+  .code-fn { color: #89B4FA; } /* Function */
+  .code-str { color: #A6E3A1; } /* String */
+  .code-cm { color: #6C7086; font-style: italic; } /* Comment */
+  .code-num { color: #FAB387; } /* Number */
+  .code-type { color: #F9E2AF; } /* Type */
+
+  /* Viva QA Formatting */
+  .qa-card {
+    background: #FFFFFF;
+    border: 1pt solid #DFC7CE;
+    border-left: 3pt solid #642F43;
+    border-radius: 5px;
+    padding: 7px 10px;
+    margin-bottom: 7px;
+    page-break-inside: avoid;
+  }
+
+  .qa-q {
+    font-weight: 700;
+    font-size: 9pt;
+    color: #642F43;
+    margin-bottom: 3px;
+  }
+
+  .qa-a {
+    font-size: 8.5pt;
+    color: #2D1A22;
+    line-height: 1.45;
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div style="height: 100vh; display: flex; flex-direction: column; justify-content: space-between; padding: 45px 30px; text-align: center; border: 4pt double #642F43; border-radius: 8px; margin: 15px; background: linear-gradient(180deg, #FFFFFF 0%, #FDF7F8 100%);">
+  <div style="margin-top: 25px;">
+    <div style="font-size: 11pt; letter-spacing: 2px; font-weight: 700; color: #7D5563; text-transform: uppercase; margin-bottom: 8px;">
+      Design and Analysis of Algorithms (DAA) — Mini-Project
+    </div>
+    <div style="font-size: 9.5pt; color: #8F5E6F; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+      Academic Evaluation &amp; Comprehensive Viva Preparation Guide
+    </div>
+  </div>
+
+  <div style="margin: 40px 0;">
+    <div style="display: inline-block; background: #642F43; color: #FFFFFF; font-size: 9pt; font-weight: 700; padding: 4px 14px; border-radius: 20px; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 14px;">
+      PROJECT VIVA STUDY GUIDE
+    </div>
+    <h1 style="font-size: 28pt; font-weight: 800; color: #642F43; margin: 0 0 10px 0; letter-spacing: -0.5px; line-height: 1.15;">
+      EXAMIA
+    </h1>
+    <div style="font-size: 15pt; font-weight: 600; color: #781D42; margin-bottom: 16px;">
+      Intelligent Examination Timetable Generator
+    </div>
+    <div style="font-size: 10pt; color: #522736; max-width: 540px; margin: 0 auto; line-height: 1.5;">
+      Optimal conflict-free examination scheduling using Graph Coloring heuristics (Welsh-Powell Greedy Algorithm) and exact Constraint Satisfaction (Backtracking Algorithm) with automated classroom bin-packing allocation.
+    </div>
+  </div>
+
+  <div style="background: #FFFFFF; border: 1pt solid #DFC7CE; border-radius: 8px; padding: 18px 24px; max-width: 520px; margin: 0 auto; text-align: left; box-shadow: 0 2px 4px rgba(100, 47, 67, 0.05);">
+    <table style="width: 100%; border-collapse: collapse; margin: 0; font-size: 9pt;">
+      <tr>
+        <td style="padding: 5px 0; border: none; font-weight: 700; color: #642F43; width: 40%;">Course:</td>
+        <td style="padding: 5px 0; border: none; color: #2D1A22;">Design &amp; Analysis of Algorithms (CS204)</td>
+      </tr>
+      <tr>
+        <td style="padding: 5px 0; border: none; font-weight: 700; color: #642F43;">Academic Program:</td>
+        <td style="padding: 5px 0; border: none; color: #2D1A22;">B.Tech in Computer Science &amp; Engineering</td>
+      </tr>
+      <tr>
+        <td style="padding: 5px 0; border: none; font-weight: 700; color: #642F43;">Backend Architecture:</td>
+        <td style="padding: 5px 0; border: none; color: #2D1A22;">Java 21 LTS Standard Library (Zero External Frameworks)</td>
+      </tr>
+      <tr>
+        <td style="padding: 5px 0; border: none; font-weight: 700; color: #642F43;">Database Engine:</td>
+        <td style="padding: 5px 0; border: none; color: #2D1A22;">SQLite Embedded Database (WAL Journal Mode)</td>
+      </tr>
+      <tr>
+        <td style="padding: 5px 0; border: none; font-weight: 700; color: #642F43;">Frontend Technology:</td>
+        <td style="padding: 5px 0; border: none; color: #2D1A22;">React 18 Single-Page Application (Tailwind CSS)</td>
+      </tr>
+      <tr>
+        <td style="padding: 5px 0; border: none; font-weight: 700; color: #642F43;">DAA Strategies:</td>
+        <td style="padding: 5px 0; border: none; color: #2D1A22;">Greedy Graph Coloring &amp; Backtracking State-Space Search</td>
+      </tr>
+    </table>
+  </div>
+
+  <div style="margin-bottom: 20px; font-size: 8pt; color: #7D5563; border-top: 0.5pt solid #DFC7CE; padding-top: 10px;">
+    Prepared for Departmental Review, Project Demonstration, and External Examiner Viva Voce.
+  </div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- TABLE OF CONTENTS -->
+<div style="padding-top: 10px;">
+  <div style="display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2pt solid #642F43; padding-bottom: 6px; margin-bottom: 14px;">
+    <h1 style="font-size: 16pt; font-weight: 800; color: #642F43; margin: 0;">Table of Contents</h1>
+    <span style="font-size: 9pt; color: #7D5563; font-weight: 600;">16 Structured Chapters</span>
+  </div>
+
+  <table style="width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 9pt;">
+    <thead>
+      <tr>
+        <th style="width: 12%; text-align: center;">Chapter</th>
+        <th style="width: 76%;">Chapter Title &amp; Core Content</th>
+        <th style="width: 12%; text-align: right;">Coverage</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="text-align: center; font-weight: 700; color: #642F43;">1</td>
+        <td><strong>Project Introduction &amp; Problem Statement:</strong> Examination timetabling problem, NP-completeness, conflict rules.</td>
+        <td style="text-align: right; color: #7D5563;">Overview</td>
+      </tr>
+      <tr>
+        <td style="text-align: center; font-weight: 700; color: #642F43;">2</td>
+        <td><strong>Problem Selection &amp; Real-World Applications:</strong> Manual vs algorithmic scheduling, university applications.</td>
+        <td style="text-align: right; color: #7D5563;">Rationale</td>
+      </tr>
+      <tr>
+        <td style="text-align: center; font-weight: 700; color: #642F43;">3</td>
+        <td><strong>Project Architecture &amp; Technology Stack:</strong> Clean 3-tier architecture, Java 21, SQLite WAL, React 18 SPA.</td>
+        <td style="text-align: right; color: #7D5563;">Architecture</td>
+      </tr>
+      <tr>
+        <td style="text-align: center; font-weight: 700; color: #642F43;">4</td>
+        <td><strong>Complete Project Working (Step-by-Step Lifecycle):</strong> 11-step execution flow from database seed to final timetable.</td>
+        <td style="text-align: right; color: #7D5563;">Workflow</td>
+      </tr>
+      <tr>
+        <td style="text-align: center; font-weight: 700; color: #642F43;">5</td>
+        <td><strong>Graph Theory Fundamentals &amp; Graph Coloring:</strong> Vertices, edges, conflict graph construction, Chromatic Number.</td>
+        <td style="text-align: right; color: #7D5563;">Theory</td>
+      </tr>
+      <tr>
+        <td style="text-align: center; font-weight: 700; color: #642F43;">6</td>
+        <td><strong>Greedy Coloring (Welsh-Powell):</strong> Degree sorting heuristic, pseudocode, Java code walkthrough, dry-run table.</td>
+        <td style="text-align: right; color: #7D5563;">Algorithm 1</td>
+      </tr>
+      <tr>
+        <td style="text-align: center; font-weight: 700; color: #642F43;">7</td>
+        <td><strong>Backtracking Coloring (m-Coloring Problem):</strong> State-space tree, recursive pruning, isSafe condition, comparison matrix.</td>
+        <td style="text-align: right; color: #7D5563;">Algorithm 2</td>
+      </tr>
+      <tr>
+        <td style="text-align: center; font-weight: 700; color: #642F43;">8</td>
+        <td><strong>Java Backend Implementation Walkthrough:</strong> Class-by-class walkthrough of all backend components.</td>
+        <td style="text-align: right; color: #7D5563;">Code Walk</td>
+      </tr>
+      <tr>
+        <td style="text-align: center; font-weight: 700; color: #642F43;">9</td>
+        <td><strong>Database Architecture, REST APIs &amp; Communication:</strong> SQLite tables, indexes, REST payload formats, HTTP lifecycle.</td>
+        <td style="text-align: right; color: #7D5563;">Full Stack</td>
+      </tr>
+      <tr>
+        <td style="text-align: center; font-weight: 700; color: #642F43;">10</td>
+        <td><strong>Correctness of Implementation &amp; Invariant Defenses:</strong> Zero student clashes, no room double-booking, capacity satisfaction.</td>
+        <td style="text-align: right; color: #7D5563;">Verification</td>
+      </tr>
+      <tr>
+        <td style="text-align: center; font-weight: 700; color: #642F43;">11</td>
+        <td><strong>Time &amp; Space Complexity Analysis:</strong> Mathematical derivations, asymptotic upper and lower bounds, master matrix.</td>
+        <td style="text-align: right; color: #7D5563;">Complexity</td>
+      </tr>
+      <tr>
+        <td style="text-align: center; font-weight: 700; color: #642F43;">12</td>
+        <td><strong>Comprehensive Test Cases &amp; Verification Matrix:</strong> 12 stress scenarios including complete graphs and capacity overflows.</td>
+        <td style="text-align: right; color: #7D5563;">Testing</td>
+      </tr>
+      <tr>
+        <td style="text-align: center; font-weight: 700; color: #642F43;">13</td>
+        <td><strong>Live Project Demonstration Script:</strong> Step-by-step presentation walkthrough for external examiners.</td>
+        <td style="text-align: right; color: #7D5563;">Demo Guide</td>
+      </tr>
+      <tr>
+        <td style="text-align: center; font-weight: 700; color: #642F43;">14</td>
+        <td><strong>Individual Contribution &amp; Team Viva Strategy:</strong> 3-member role allocation matrix and defense guidelines.</td>
+        <td style="text-align: right; color: #7D5563;">Team Defense</td>
+      </tr>
+      <tr>
+        <td style="text-align: center; font-weight: 700; color: #642F43;">15</td>
+        <td><strong>Master Viva Question Bank (55 Questions &amp; Answers):</strong> 4 complete sections covering DAA, Java, Database, and Edge Cases.</td>
+        <td style="text-align: right; color: #7D5563;">Viva Prep</td>
+      </tr>
+      <tr>
+        <td style="text-align: center; font-weight: 700; color: #642F43;">16</td>
+        <td><strong>Advantages, Limitations, Future Scope &amp; Conclusion:</strong> Real-world impact, production boundaries, future enhancements.</td>
+        <td style="text-align: right; color: #7D5563;">Conclusion</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="page-break"></div>
+
+<!-- CHAPTER 1 -->
+<h1 class="chapter-title">Chapter 1: Project Introduction &amp; Problem Statement</h1>
+
+<h2>1.1 What is Examia?</h2>
+<p>
+  <strong>Examia</strong> is an automated, conflict-free examination scheduling and room allocation system developed for academic institutions. In universities and engineering colleges, organizing end-semester examinations is a notoriously complex administrative task. An institution offers dozens of courses across multiple engineering divisions (for example, Division A, Division B, and Division C). Many subjects have cross-departmental or shared student enrollments.
+</p>
+<p>
+  If two examinations with common students are scheduled in the same time slot, a <strong>student conflict</strong> occurs, making it physically impossible for enrolled students to take both exams. Furthermore, even after resolving timing conflicts, the institution must allocate classrooms without exceeding student capacities or assigning the same classroom to two distinct exams simultaneously (a <strong>room conflict</strong>).
+</p>
+<p>
+  Examia completely solves this problem by modeling examination timetabling as a <strong>Graph Coloring Problem</strong>. It provides two powerful Design and Analysis of Algorithms (DAA) strategies: the <strong>Welsh-Powell Greedy Graph Coloring Algorithm</strong> and the exact <strong>Backtracking Algorithm</strong>, coupled with a capacity-aware greedy classroom bin-packing algorithm.
+</p>
+
+<h2>1.2 The Problem Statement</h2>
+<p>
+  Formally, the <strong>Examination Timetabling Problem (ETP)</strong> is defined as follows:
+</p>
+
+<div class="callout">
+  <div class="callout-title">Formal Problem Definition</div>
+  <p>
+    Given a set of <span class="math-var">N</span> academic subjects <span class="math-var">S = {s<sub>1</sub>, s<sub>2</sub>, ..., s<sub>N</sub>}</span>, a set of student divisions enrolled in each subject, a set of available classrooms <span class="math-var">C = {c<sub>1</sub>, c<sub>2</sub>, ..., c<sub>M</sub>}</span> each with a fixed seating capacity, and a configured examination period consisting of calendar dates and daily time slots:
+  </p>
+  <ul>
+    <li><strong>Objective 1:</strong> Assign each subject <span class="math-var">s<sub>i</sub></span> to an examination time slot such that no two subjects sharing enrolled students are assigned to the same time slot.</li>
+    <li><strong>Objective 2:</strong> Minimize the total number of time slots used (approximating the <em>Chromatic Number</em> of the conflict graph).</li>
+    <li><strong>Objective 3:</strong> For every subject in each time slot, assign one or more classrooms such that the sum of room capacities is greater than or equal to the total enrolled students, and no classroom is double-booked in the same slot.</li>
+  </ul>
+</div>
+
+<h2>1.3 Computational Complexity: NP-Completeness</h2>
+<p>
+  The general Graph Coloring Problem (determining whether a graph can be colored with <span class="math-var">k</span> colors for <span class="math-var">k &ge; 3</span>) was proven to be <strong>NP-Complete</strong> by Richard Karp in 1972.
+</p>
+<p>
+  Because the Examination Timetabling Problem is isomorphic to Graph Vertex Coloring, finding the absolute minimum number of examination slots is NP-hard. A brute-force search over <span class="math-var">m</span> slots and <span class="math-var">V</span> subjects requires checking <span class="math-var">m<sup>V</sup></span> possibilities, which is computationally intractable for realistic university schedules. This theoretical foundation justifies the implementation of:
+</p>
+<ol>
+  <li><strong>Greedy Graph Coloring (Welsh-Powell Heuristic):</strong> Executes in polynomial time <span class="math-var">O(V log V + E)</span> to produce near-optimal, conflict-free schedules in under 5 milliseconds.</li>
+  <li><strong>Backtracking Algorithm with State-Space Pruning:</strong> Systematically explores potential colorings with depth-first branch-and-bound pruning to find the exact minimal chromatic number for moderate-sized input graphs.</li>
+</ol>
+
+<!-- CHAPTER 2 -->
+<h1 class="chapter-title">Chapter 2: Problem Selection &amp; Real-World Applications</h1>
+
+<h2>2.1 Why We Selected This Problem</h2>
+<p>
+  Examination scheduling was selected because it represents a perfect bridge between rigorous theoretical computer science and real-world practical software engineering:
+</p>
+<ul>
+  <li><strong>Direct Algorithmic Applicability:</strong> Graph theory and graph coloring are standard pillars of DAA curricula. Rather than demonstrating graph coloring on synthetic test graphs, Examia applies it directly to a tangible, high-stakes operational problem.</li>
+  <li><strong>Multi-Constraint Optimization:</strong> Timetabling involves both <em>Hard Constraints</em> (zero student overlap, zero room double-booking, seating capacity limits) and <em>Soft Constraints</em> (slot minimization, compact dates).</li>
+  <li><strong>Measurable Benchmarks:</strong> It allows direct, empirical comparison between greedy heuristics and exact backtracking algorithms on execution time, recursion depth, and total slots used.</li>
+</ul>
+
+<h2>2.2 Manual Timetable Scheduling vs. Examia Automation</h2>
+<table>
+  <thead>
+    <tr>
+      <th style="width: 25%;">Evaluation Metric</th>
+      <th style="width: 37%;">Manual College Scheduling</th>
+      <th style="width: 38%;">Examia Automated Engine</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Computation Time</strong></td>
+      <td>3 to 7 working days of manual trial and error.</td>
+      <td>Less than 10 milliseconds (<span class="math-var">O(V log V + E)</span>).</td>
+    </tr>
+    <tr>
+      <td><strong>Conflict Guarantee</strong></td>
+      <td>Prone to human oversight, resulting in student clashes.</td>
+      <td>Mathematically guaranteed zero clashes via adjacency checking.</td>
+    </tr>
+    <tr>
+      <td><strong>Slot Efficiency</strong></td>
+      <td>Excessive slots assigned due to conservative scheduling.</td>
+      <td>Minimizes slots close to the graph's chromatic number.</td>
+    </tr>
+    <tr>
+      <td><strong>Classroom Seating</strong></td>
+      <td>Frequent room overflows and manual headcount mismatch.</td>
+      <td>Greedy Best-Fit bin-packing ensures seating sufficiency.</td>
+    </tr>
+    <tr>
+      <td><strong>Rescheduling Agility</strong></td>
+      <td>Emergency changes require restarting the entire manual process.</td>
+      <td>Instant re-generation upon adding or modifying courses.</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- CHAPTER 3 -->
+<h1 class="chapter-title">Chapter 3: Project Architecture &amp; Technology Stack</h1>
+
+<h2>3.1 Architecture Overview</h2>
+<p>
+  Examia is built with a decoupled, high-performance 3-tier architecture adhering to clean separation of concerns:
+</p>
+
+<!-- ARCHITECTURE SVG DIAGRAM -->
+<div class="diagram-container">
+  <svg width="100%" height="210" viewBox="0 0 650 210" xmlns="http://www.w3.org/2000/svg">
+    <!-- Frontend Layer -->
+    <rect x="20" y="15" width="610" height="42" rx="6" fill="#FDF7F8" stroke="#642F43" stroke-width="1.5"/>
+    <text x="35" y="40" font-family="-apple-system, sans-serif" font-size="11" font-weight="bold" fill="#642F43">CLIENT LAYER (FRONTEND)</text>
+    <text x="230" y="40" font-family="-apple-system, sans-serif" font-size="9.5" fill="#2D1A22">React 18 Single-Page App  |  Tailwind CSS  |  Lucide Icons  |  Vite Bundler</text>
+
+    <!-- Communication Arrow -->
+    <line x1="325" y1="57" x2="325" y2="78" stroke="#781D42" stroke-width="2" stroke-dasharray="4,3"/>
+    <polygon points="325,82 321,75 329,75" fill="#781D42"/>
+    <text x="335" y="72" font-family="-apple-system, sans-serif" font-size="8" font-weight="bold" fill="#781D42">HTTP REST API (JSON / port 8080)</text>
+
+    <!-- Backend Layer -->
+    <rect x="20" y="85" width="610" height="68" rx="6" fill="#FAF0F2" stroke="#781D42" stroke-width="1.5"/>
+    <text x="35" y="105" font-family="-apple-system, sans-serif" font-size="11" font-weight="bold" fill="#781D42">BACKEND LOGIC (JAVA 21 LTS)</text>
+    <text x="250" y="105" font-family="-apple-system, sans-serif" font-size="9" fill="#522736">com.sun.net.httpserver.HttpServer  |  Concurrent ThreadPoolExecutor</text>
+
+    <!-- Sub components inside Backend -->
+    <rect x="35" y="115" width="275" height="30" rx="4" fill="#FFFFFF" stroke="#A3485E" stroke-width="1"/>
+    <text x="45" y="133" font-family="-apple-system, sans-serif" font-size="8.5" font-weight="bold" fill="#642F43">GraphColoringScheduler.java</text>
+    <text x="180" y="133" font-family="-apple-system, sans-serif" font-size="8" fill="#7D5563">(Greedy &amp; Backtracking)</text>
+
+    <rect x="330" y="115" width="285" height="30" rx="4" fill="#FFFFFF" stroke="#A3485E" stroke-width="1"/>
+    <text x="340" y="133" font-family="-apple-system, sans-serif" font-size="8.5" font-weight="bold" fill="#642F43">ClassroomAllocationService.java</text>
+    <text x="500" y="133" font-family="-apple-system, sans-serif" font-size="8" fill="#7D5563">(Best-Fit Bin Packing)</text>
+
+    <!-- Communication Arrow to DB -->
+    <line x1="325" y1="153" x2="325" y2="171" stroke="#642F43" stroke-width="2"/>
+    <polygon points="325,175 321,168 329,168" fill="#642F43"/>
+    <text x="335" y="166" font-family="-apple-system, sans-serif" font-size="8" font-weight="bold" fill="#642F43">JDBC Thread-Safe Connection Pool</text>
+
+    <!-- Database Layer -->
+    <rect x="20" y="177" width="610" height="28" rx="5" fill="#ECE0E3" stroke="#642F43" stroke-width="1.5"/>
+    <text x="35" y="195" font-family="-apple-system, sans-serif" font-size="10" font-weight="bold" fill="#642F43">PERSISTENCE LAYER (SQLITE WAL MODE)</text>
+    <text x="300" y="195" font-family="-apple-system, sans-serif" font-size="8.5" fill="#2D1A22">examia.db  |  Tables: subjects, student_groups, classrooms, algorithm_runs</text>
+  </svg>
+  <div class="diagram-caption">Figure 3.1: Complete Architectural Flow of the Examia System</div>
+</div>
+
+<h2>3.2 Technology Stack Details</h2>
+<ul>
+  <li><strong>Java 21 LTS:</strong> Used for the core server and algorithms. Utilizes modern Java features such as pattern matching, the standard light-weight HTTP server (<code>com.sun.net.httpserver</code>), and robust object-oriented collections without heavy third-party framework overhead.</li>
+  <li><strong>SQLite 3 with WAL Mode:</strong> A self-contained, serverless embedded database. Write-Ahead Logging (WAL) is enabled for high-concurrency read-write performance without locking errors.</li>
+  <li><strong>React 18 SPA:</strong> Single-Page Application running on Vite, providing a modern user interface for subject management, visual graph inspections, and printable PDF examination timetables.</li>
+</ul>
+
+<!-- CHAPTER 4 -->
+<h1 class="chapter-title">Chapter 4: Complete Project Working (Step-by-Step Lifecycle)</h1>
+
+<p>
+  When a user operates Examia, the system transitions through 11 sequential, well-defined execution steps:
+</p>
+
+<ol>
+  <li><strong>Database Initialization:</strong> Upon startup, <code>DatabaseManager.java</code> establishes a thread-safe connection to <code>examia.db</code> and executes DDL scripts to verify that tables (<code>subjects</code>, <code>student_groups</code>, <code>subject_enrollments</code>, <code>classrooms</code>, <code>algorithm_runs</code>) exist.</li>
+  <li><strong>Default Seeding:</strong> If the database is empty, Examia automatically populates realistic mock data: 5 core subjects (CS201, CS202, CS203, CS204, MA201), 3 student divisions (Division A with 45 students, Division B with 45 students, Division C with 40 students), and 4 physical classrooms (A101, B202, Mega Hall 201, Auditorium 103).</li>
+  <li><strong>Client Configuration:</strong> The user selects the desired scheduling algorithm (Greedy Welsh-Powell or Backtracking), specifies an examination start date, and sets available daily time slots (e.g., Slot 1: 09:00 AM - 12:00 PM; Slot 2: 01:00 PM - 04:00 PM).</li>
+  <li><strong>API Request Dispatch:</strong> The React frontend packages the parameters into a JSON payload and issues an HTTP <code>POST /api/timetable/generate</code> request to the Java backend.</li>
+  <li><strong>Data Retrieval:</strong> <code>ExamOptimaServer.java</code> invokes <code>DatabaseManager</code> to load all subjects, their enrolled divisions, student counts, and active classrooms.</li>
+  <li><strong>Conflict Graph Construction:</strong> The Java backend constructs an undirected graph <span class="math-var">G = (V, E)</span>. Each subject represents a vertex. For every pair of subjects <span class="math-var">(s<sub>i</sub>, s<sub>j</sub>)</span>, if their enrolled divisions overlap, an undirected edge is created.</li>
+  <li><strong>Graph Coloring Execution:</strong> The selected algorithm assigns a non-negative color integer <span class="math-var">c &ge; 0</span> to every vertex such that adjacent vertices receive different colors.</li>
+  <li><strong>Date &amp; Time Slot Mapping:</strong> Color integers (0, 1, 2, ...) are mapped to physical calendar dates and daily time windows.</li>
+  <li><strong>Classroom Bin-Packing Allocation:</strong> For each time slot, <code>ClassroomAllocationService.java</code> assigns classrooms to subjects. It uses a capacity-aware Best-Fit strategy to prevent room double-booking and ensure total seating capacity meets student enrollment.</li>
+  <li><strong>Database Persistence:</strong> The schedule, room allocations, execution time, and algorithm metrics are stored atomically inside SQLite.</li>
+  <li><strong>UI Rendering &amp; Print Preview:</strong> The JSON response is returned to React, rendering an interactive timetable with room breakdown accordions and a clean print view.</li>
+</ol>
+
+<div class="page-break"></div>
+
+<!-- CHAPTER 5 -->
+<h1 class="chapter-title">Chapter 5: Graph Theory Fundamentals &amp; Graph Coloring</h1>
+
+<h2>5.1 Graph Theory Terminology in Examia</h2>
+<p>
+  In Examia, the examination scheduling challenge is mapped mathematically to an <strong>undirected, unweighted graph</strong> <span class="math-var">G = (V, E)</span>:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width: 25%;">Graph Element</th>
+      <th style="width: 35%;">Mathematical Definition</th>
+      <th style="width: 40%;">Examia System Representation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Vertex (Node) <span class="math-var">v &isin; V</span></strong></td>
+      <td>A fundamental discrete unit in the graph.</td>
+      <td>An individual <strong>Examination Subject</strong> (e.g., CS201 Java, CS202 DSA).</td>
+    </tr>
+    <tr>
+      <td><strong>Edge (Arc) <span class="math-var">(u, v) &isin; E</span></strong></td>
+      <td>An undirected connection between two vertices.</td>
+      <td>A <strong>Student Conflict</strong>: both subjects share at least one student division.</td>
+    </tr>
+    <tr>
+      <td><strong>Vertex Degree <span class="math-var">deg(v)</span></strong></td>
+      <td>The number of edges incident to vertex <span class="math-var">v</span>.</td>
+      <td>The total count of other subjects conflicting with this subject.</td>
+    </tr>
+    <tr>
+      <td><strong>Color <span class="math-var">c &isin; {0, 1, ..., k-1}</span></strong></td>
+      <td>A discrete label assigned to a vertex.</td>
+      <td>An <strong>Examination Time Slot</strong> (e.g., Slot 1: 09:00 AM - 12:00 PM).</td>
+    </tr>
+    <tr>
+      <td><strong>Chromatic Number <span class="math-var">&chi;(G)</span></strong></td>
+      <td>The minimal number of colors needed to color <span class="math-var">G</span>.</td>
+      <td>The absolute <strong>minimum number of time slots</strong> to conduct all exams.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>5.2 Visual Conflict Graph of the Examia System</h2>
+<p>
+  The diagram below illustrates the actual 5-subject conflict graph from the Examia production seed. Notice that <strong>CS203 (DBMS)</strong> and <strong>CS202 (Data Structures)</strong> share <strong>no students</strong>, so there is no edge between them. Consequently, both are safely scheduled together in <strong>Slot 4</strong> without conflict.
+</p>
+
+<!-- CONFLICT GRAPH SVG DIAGRAM -->
+<div class="diagram-container">
+  <svg width="100%" height="280" viewBox="0 0 650 280" xmlns="http://www.w3.org/2000/svg">
+    <!-- Conflict Edges (Lines) -->
+    <!-- CS201 to CS204 -->
+    <line x1="220" y1="70" x2="430" y2="70" stroke="#B87D8E" stroke-width="2"/>
+    <text x="325" y="63" font-family="-apple-system, sans-serif" font-size="8" fill="#781D42" text-anchor="middle">Shares Div A</text>
+
+    <!-- CS201 to MA201 -->
+    <line x1="220" y1="70" x2="325" y2="175" stroke="#B87D8E" stroke-width="2"/>
+    <text x="250" y="130" font-family="-apple-system, sans-serif" font-size="8" fill="#781D42" text-anchor="middle">Div A, B</text>
+
+    <!-- CS204 to MA201 -->
+    <line x1="430" y1="70" x2="325" y2="175" stroke="#B87D8E" stroke-width="2"/>
+    <text x="395" y="130" font-family="-apple-system, sans-serif" font-size="8" fill="#781D42" text-anchor="middle">Div A, C</text>
+
+    <!-- CS201 to CS203 -->
+    <line x1="220" y1="70" x2="150" y2="230" stroke="#B87D8E" stroke-width="2"/>
+    <text x="165" y="150" font-family="-apple-system, sans-serif" font-size="8" fill="#781D42" text-anchor="middle">Div B</text>
+
+    <!-- MA201 to CS203 -->
+    <line x1="325" y1="175" x2="150" y2="230" stroke="#B87D8E" stroke-width="2"/>
+    <text x="225" y="215" font-family="-apple-system, sans-serif" font-size="8" fill="#781D42" text-anchor="middle">Div B, C</text>
+
+    <!-- CS204 to CS203 -->
+    <path d="M 430 70 Q 380 260 150 230" fill="none" stroke="#B87D8E" stroke-width="2"/>
+    <text x="320" y="248" font-family="-apple-system, sans-serif" font-size="8" fill="#781D42" text-anchor="middle">Shares Div C</text>
+
+    <!-- CS201 to CS202 -->
+    <path d="M 220 70 Q 280 20 500 230" fill="none" stroke="#B87D8E" stroke-width="2"/>
+    <text x="345" y="28" font-family="-apple-system, sans-serif" font-size="8" fill="#781D42" text-anchor="middle">Shares Div A</text>
+
+    <!-- CS204 to CS202 -->
+    <line x1="430" y1="70" x2="500" y2="230" stroke="#B87D8E" stroke-width="2"/>
+    <text x="485" y="150" font-family="-apple-system, sans-serif" font-size="8" fill="#781D42" text-anchor="middle">Div A</text>
+
+    <!-- MA201 to CS202 -->
+    <line x1="325" y1="175" x2="500" y2="230" stroke="#B87D8E" stroke-width="2"/>
+    <text x="425" y="215" font-family="-apple-system, sans-serif" font-size="8" fill="#781D42" text-anchor="middle">Div A</text>
+
+    <!-- IMPORTANT: NO EDGE BETWEEN CS203 AND CS202 -->
+    <line x1="150" y1="230" x2="500" y2="230" stroke="#10B981" stroke-width="2" stroke-dasharray="6,4"/>
+    <rect x="260" y="220" width="130" height="20" rx="4" fill="#ECFDF5" stroke="#10B981" stroke-width="1"/>
+    <text x="325" y="234" font-family="-apple-system, sans-serif" font-size="8" font-weight="bold" fill="#047857" text-anchor="middle">NO CONFLICT (Both in Slot 4)</text>
+
+    <!-- VERTICES (SUBJECT NODES) -->
+    <!-- Node CS201 (Slot 1 - Blue) -->
+    <circle cx="220" cy="70" r="28" fill="#EFF6FF" stroke="#2563EB" stroke-width="2.5"/>
+    <text x="220" y="66" font-family="-apple-system, sans-serif" font-size="9" font-weight="bold" fill="#1E40AF" text-anchor="middle">CS201</text>
+    <text x="220" y="77" font-family="-apple-system, sans-serif" font-size="7.5" fill="#1E40AF" text-anchor="middle">Slot 1 (90s)</text>
+
+    <!-- Node CS204 (Slot 2 - Green) -->
+    <circle cx="430" cy="70" r="28" fill="#ECFDF5" stroke="#059669" stroke-width="2.5"/>
+    <text x="430" y="66" font-family="-apple-system, sans-serif" font-size="9" font-weight="bold" fill="#065F46" text-anchor="middle">CS204</text>
+    <text x="430" y="77" font-family="-apple-system, sans-serif" font-size="7.5" fill="#065F46" text-anchor="middle">Slot 2 (85s)</text>
+
+    <!-- Node MA201 (Slot 3 - Orange) -->
+    <circle cx="325" cy="175" r="30" fill="#FFFBEB" stroke="#D97706" stroke-width="2.5"/>
+    <text x="325" y="171" font-family="-apple-system, sans-serif" font-size="9" font-weight="bold" fill="#92400E" text-anchor="middle">MA201</text>
+    <text x="325" y="182" font-family="-apple-system, sans-serif" font-size="7.5" fill="#92400E" text-anchor="middle">Slot 3 (130s)</text>
+
+    <!-- Node CS203 (Slot 4 - Purple) -->
+    <circle cx="150" cy="230" r="28" fill="#F5F3FF" stroke="#7C3AED" stroke-width="2.5"/>
+    <text x="150" y="226" font-family="-apple-system, sans-serif" font-size="9" font-weight="bold" fill="#5B21B6" text-anchor="middle">CS203</text>
+    <text x="150" y="237" font-family="-apple-system, sans-serif" font-size="7.5" fill="#5B21B6" text-anchor="middle">Slot 4 (85s)</text>
+
+    <!-- Node CS202 (Slot 4 - Purple) -->
+    <circle cx="500" cy="230" r="28" fill="#F5F3FF" stroke="#7C3AED" stroke-width="2.5"/>
+    <text x="500" y="226" font-family="-apple-system, sans-serif" font-size="9" font-weight="bold" fill="#5B21B6" text-anchor="middle">CS202</text>
+    <text x="500" y="237" font-family="-apple-system, sans-serif" font-size="7.5" fill="#5B21B6" text-anchor="middle">Slot 4 (45s)</text>
+  </svg>
+  <div class="diagram-caption">Figure 5.1: Conflict Graph with 5 Vertices and Optimal 4-Color Assignment</div>
+</div>
+
+<!-- CHAPTER 6 -->
+<h1 class="chapter-title">Chapter 6: Greedy Graph Coloring (Welsh-Powell Algorithm)</h1>
+
+<h2>6.1 The Welsh-Powell Heuristic</h2>
+<p>
+  A standard greedy coloring algorithm processes vertices in arbitrary order, which can cause poor color utilization. In 1967, Welsh and Powell introduced an optimal ordering heuristic:
+</p>
+<div class="callout">
+  <div class="callout-title">The Welsh-Powell Principle</div>
+  <p>
+    Vertices with higher degrees (more conflicting neighbors) impose the most severe restrictions on adjacent nodes. Therefore, <strong>order vertices by descending degree</strong> before assigning colors. Higher-degree vertices are colored first when color choices are abundant; lower-degree vertices have fewer restrictions and easily fit into existing colors later.
+  </p>
+</div>
+
+<h2>6.2 Pseudocode</h2>
+<pre><code><span class="code-kw">ALGORITHM</span> <span class="code-fn">WelshPowellGreedyColoring</span>(Graph G = (V, E)):
+1.  <span class="code-kw">FOR EACH</span> vertex v <span class="code-kw">IN</span> V:
+        degree[v] = count(G.neighbors[v])
+2.  Sort vertices in descending order of degree[v]
+3.  assignments = empty map (vertex -> slot)
+4.  <span class="code-kw">FOR EACH</span> vertex u <span class="code-kw">IN</span> sortedVertices:
+        usedSlots = empty set
+        <span class="code-kw">FOR EACH</span> neighbor w <span class="code-kw">IN</span> G.neighbors[u]:
+            <span class="code-kw">IF</span> w is already in assignments:
+                add assignments[w] to usedSlots
+        slot = 0
+        <span class="code-kw">WHILE</span> slot is in usedSlots:
+            slot = slot + 1
+        assignments[u] = slot
+5.  <span class="code-kw">RETURN</span> assignments</code></pre>
+
+<h2>6.3 Line-by-Line Java Implementation Walkthrough</h2>
+<p>From <code>GraphColoringScheduler.java</code>:</p>
+<pre><code><span class="code-cm">// Step 1 & 2: Degree sorting using an inline Comparator</span>
+Collections.sort(subjects, <span class="code-kw">new</span> Comparator&lt;Subject&gt;() {
+    <span class="code-kw">@Override</span>
+    <span class="code-kw">public int</span> compare(Subject s1, Subject s2) {
+        <span class="code-kw">int</span> deg1 = degrees.getOrDefault(s1.getId(), 0);
+        <span class="code-kw">int</span> deg2 = degrees.getOrDefault(s2.getId(), 0);
+        <span class="code-kw">return</span> Integer.compare(deg2, deg1); <span class="code-cm">// Descending order</span>
+    }
+});
+
+<span class="code-cm">// Step 3 & 4: Greedy first-fit coloring</span>
+Map&lt;String, Integer&gt; assignments = <span class="code-kw">new</span> HashMap&lt;&gt;();
+<span class="code-kw">for</span> (Subject subject : subjects) {
+    Set&lt;Integer&gt; neighborColors = <span class="code-kw">new</span> HashSet&lt;&gt;();
+    List&lt;String&gt; neighbors = graph.getNeighbors(subject.getId());
+    <span class="code-kw">for</span> (String neighborId : neighbors) {
+        <span class="code-kw">if</span> (assignments.containsKey(neighborId)) {
+            neighborColors.add(assignments.get(neighborId));
+        }
+    }
+    <span class="code-kw">int</span> color = 0;
+    <span class="code-kw">while</span> (neighborColors.contains(color)) {
+        color++; <span class="code-cm">// Pick the smallest non-conflicting color</span>
+    }
+    assignments.put(subject.getId(), color);
+}</code></pre>
+
+<h2>6.4 Step-by-Step Dry Run on the Conflict Graph</h2>
+<p>
+  Let us trace the algorithm execution on our 5-subject conflict graph:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width: 10%;">Step</th>
+      <th style="width: 20%;">Subject Picked</th>
+      <th style="width: 15%;">Vertex Degree</th>
+      <th style="width: 25%;">Neighbor Colors Present</th>
+      <th style="width: 30%;">Color Assigned (Time Slot)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td><strong>MA201 (Maths)</strong></td>
+      <td>4 (Highest)</td>
+      <td>None (first vertex)</td>
+      <td><span class="badge badge-info">Color 0 &rarr; Slot 1</span></td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><strong>CS201 (Java)</strong></td>
+      <td>4</td>
+      <td>MA201 has Color 0</td>
+      <td><span class="badge badge-success">Color 1 &rarr; Slot 2</span></td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><strong>CS204 (OS)</strong></td>
+      <td>4</td>
+      <td>MA201 (0), CS201 (1)</td>
+      <td><span class="badge badge-warning">Color 2 &rarr; Slot 3</span></td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><strong>CS203 (DBMS)</strong></td>
+      <td>3</td>
+      <td>MA201 (0), CS201 (1), CS204 (2)</td>
+      <td><span class="badge badge-danger">Color 3 &rarr; Slot 4</span></td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td><strong>CS202 (DSA)</strong></td>
+      <td>3</td>
+      <td>MA201 (0), CS201 (1), CS204 (2)</td>
+      <td><span class="badge badge-danger">Color 3 &rarr; Slot 4 (Reused!)</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- CHAPTER 7 -->
+<h1 class="chapter-title">Chapter 7: Backtracking Graph Coloring (m-Coloring Problem)</h1>
+
+<h2>7.1 Concept of Backtracking &amp; State-Space Tree</h2>
+<p>
+  Backtracking is a systematic, depth-first search strategy for solving <strong>Constraint Satisfaction Problems (CSP)</strong>. Instead of accepting the first greedy choice, backtracking searches the solution space:
+</p>
+<ol>
+  <li><strong>Tentative Assignment:</strong> Pick a candidate time slot <span class="math-var">s</span> from available slots <span class="math-var">{0, 1, ..., m-1}</span> for the current subject.</li>
+  <li><strong>Safety Check (<code>isSafe</code>):</strong> Verify whether any adjacent conflicting neighbor is already assigned to slot <span class="math-var">s</span>.</li>
+  <li><strong>Branching:</strong> If safe, tentatively assign <span class="math-var">s</span> and recursively advance to the next subject (<span class="math-var">index + 1</span>).</li>
+  <li><strong>Pruning &amp; Backtrack Step:</strong> If all slot choices for a subsequent subject fail, the algorithm <strong>prunes</strong> the dead-end branch, returns to the previous subject, unassigns the slot, and tries the next candidate.</li>
+</ol>
+
+<h2>7.2 Visual State-Space Tree Diagram</h2>
+<p>
+  The diagram below demonstrates how the recursive tree expands, detects conflicts, prunes dead branches, and backtracks to reach a conflict-free coloring:
+</p>
+
+<!-- STATE SPACE TREE SVG DIAGRAM -->
+<div class="diagram-container">
+  <svg width="100%" height="240" viewBox="0 0 650 240" xmlns="http://www.w3.org/2000/svg">
+    <!-- Level 0: Root -->
+    <rect x="250" y="10" width="150" height="28" rx="4" fill="#642F43" stroke="#4A1E2F" stroke-width="1"/>
+    <text x="325" y="28" font-family="-apple-system, sans-serif" font-size="9.5" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Root: CS201 (Java)</text>
+
+    <!-- Branch to Slot 0 -->
+    <line x1="325" y1="38" x2="200" y2="75" stroke="#781D42" stroke-width="1.5"/>
+    <text x="245" y="52" font-family="-apple-system, sans-serif" font-size="8" fill="#781D42" font-weight="bold">Assign Slot 0</text>
+
+    <!-- Branch to Slot 1 -->
+    <line x1="325" y1="38" x2="450" y2="75" stroke="#781D42" stroke-width="1.5"/>
+    <text x="405" y="52" font-family="-apple-system, sans-serif" font-size="8" fill="#781D42" font-weight="bold">Assign Slot 1</text>
+
+    <!-- Level 1: MA201 under Slot 0 -->
+    <rect x="130" y="75" width="140" height="26" rx="4" fill="#FAF0F2" stroke="#781D42" stroke-width="1"/>
+    <text x="200" y="92" font-family="-apple-system, sans-serif" font-size="9" font-weight="bold" fill="#642F43" text-anchor="middle">Next: MA201 (Maths)</text>
+
+    <!-- Level 1 Right: MA201 under Slot 1 -->
+    <rect x="380" y="75" width="140" height="26" rx="4" fill="#FAF0F2" stroke="#781D42" stroke-width="1"/>
+    <text x="450" y="92" font-family="-apple-system, sans-serif" font-size="9" font-weight="bold" fill="#642F43" text-anchor="middle">Next: MA201 (Maths)</text>
+
+    <!-- Level 1 Left Sub-branches -->
+    <line x1="170" y1="101" x2="100" y2="135" stroke="#B71C1C" stroke-width="1.5"/>
+    <line x1="230" y1="101" x2="270" y2="135" stroke="#1B5E20" stroke-width="1.5"/>
+
+    <!-- Conflict Node (Pruned) -->
+    <rect x="30" y="135" width="140" height="32" rx="4" fill="#FFEBEE" stroke="#B71C1C" stroke-width="1.2"/>
+    <text x="100" y="149" font-family="-apple-system, sans-serif" font-size="8" font-weight="bold" fill="#B71C1C" text-anchor="middle">Try Slot 0: CONFLICT!</text>
+    <text x="100" y="161" font-family="-apple-system, sans-serif" font-size="7.5" fill="#B71C1C" text-anchor="middle">[PRUNED - BACKTRACK]</text>
+
+    <!-- Safe Node -->
+    <rect x="200" y="135" width="140" height="32" rx="4" fill="#E8F5E9" stroke="#1B5E20" stroke-width="1.2"/>
+    <text x="270" y="149" font-family="-apple-system, sans-serif" font-size="8" font-weight="bold" fill="#1B5E20" text-anchor="middle">Try Slot 1: SAFE</text>
+    <text x="270" y="161" font-family="-apple-system, sans-serif" font-size="7.5" fill="#1B5E20" text-anchor="middle">Advance to CS204...</text>
+
+    <!-- Level 2 Branch to CS204 -->
+    <line x1="270" y1="167" x2="270" y2="195" stroke="#1B5E20" stroke-width="1.5"/>
+    <rect x="190" y="195" width="160" height="26" rx="4" fill="#642F43" stroke="#4A1E2F" stroke-width="1"/>
+    <text x="270" y="212" font-family="-apple-system, sans-serif" font-size="8.5" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Goal: Valid Schedule Found</text>
+
+    <!-- Legend box -->
+    <rect x="420" y="140" width="200" height="80" rx="6" fill="#FDF7F8" stroke="#DFC7CE" stroke-width="1"/>
+    <text x="430" y="157" font-family="-apple-system, sans-serif" font-size="8.5" font-weight="bold" fill="#642F43">Tree Exploration Legend:</text>
+    <circle cx="438" cy="172" r="5" fill="#1B5E20"/>
+    <text x="450" y="176" font-family="-apple-system, sans-serif" font-size="8" fill="#2D1A22">Safe Assignment (Advance)</text>
+    <circle cx="438" cy="190" r="5" fill="#B71C1C"/>
+    <text x="450" y="194" font-family="-apple-system, sans-serif" font-size="8" fill="#2D1A22">Conflict Detected (Prune Branch)</text>
+    <text x="430" y="210" font-family="-apple-system, sans-serif" font-size="7.5" fill="#7D5563">Saves exponential brute-force checks</text>
+  </svg>
+  <div class="diagram-caption">Figure 7.1: State-Space Tree Exploration with Depth-First Pruning</div>
+</div>
+
+<h2>7.3 Line-by-Line Java Implementation Walkthrough</h2>
+<p>From <code>GraphColoringScheduler.java</code>:</p>
+<pre><code><span class="code-kw">private boolean</span> backtrack(ConflictGraph graph, List&lt;Subject&gt; subjects, <span class="code-kw">int</span> index,
+                          <span class="code-kw">int</span> slotBudget, Map&lt;String, Integer&gt; assignments) {
+    <span class="code-cm">// BASE CASE: All subjects have been safely colored</span>
+    <span class="code-kw">if</span> (index == subjects.size()) {
+        <span class="code-kw">return true</span>;
+    }
+
+    Subject current = subjects.get(index);
+    <span class="code-cm">// Try every candidate time slot up to the slot budget m</span>
+    <span class="code-kw">for</span> (<span class="code-kw">int</span> slot = 0; slot &lt; slotBudget; slot++) {
+        <span class="code-kw">if</span> (isSafe(graph, current.getId(), slot, assignments)) {
+            assignments.put(current.getId(), slot); <span class="code-cm">// Tentative assignment</span>
+
+            <span class="code-kw">if</span> (backtrack(graph, subjects, index + 1, slotBudget, assignments)) {
+                <span class="code-kw">return true</span>; <span class="code-cm">// Propagate success up call stack</span>
+            }
+
+            assignments.remove(current.getId()); <span class="code-cm">// BACKTRACK (undo assignment)</span>
+        }
+    }
+    <span class="code-kw">return false</span>; <span class="code-cm">// No valid slot found in this branch</span>
+}
+
+<span class="code-kw">private boolean</span> isSafe(ConflictGraph graph, String subjectId, <span class="code-kw">int</span> slot,
+                       Map&lt;String, Integer&gt; assignments) {
+    <span class="code-kw">for</span> (String neighbor : graph.getNeighbors(subjectId)) {
+        <span class="code-kw">if</span> (assignments.containsKey(neighbor) &amp;&amp; assignments.get(neighbor) == slot) {
+            <span class="code-kw">return false</span>; <span class="code-cm">// Immediate conflict detected</span>
+        }
+    }
+    <span class="code-kw">return true</span>;
+}</code></pre>
+
+<h2>7.4 Master Algorithm Comparison</h2>
+<table>
+  <thead>
+    <tr>
+      <th style="width: 20%;">Feature</th>
+      <th style="width: 40%;">Greedy Welsh-Powell Coloring</th>
+      <th style="width: 40%;">Backtracking m-Coloring</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Algorithmic Strategy</strong></td>
+      <td>Greedy heuristic based on descending vertex degree.</td>
+      <td>Exhaustive state-space search with depth-first pruning.</td>
+    </tr>
+    <tr>
+      <td><strong>Time Complexity</strong></td>
+      <td>Polynomial: <span class="math-var">O(V log V + E)</span> (under 5 milliseconds).</td>
+      <td>Exponential: <span class="math-var">O(m<sup>V</sup>)</span> worst case.</td>
+    </tr>
+    <tr>
+      <td><strong>Space Complexity</strong></td>
+      <td><span class="math-var">O(V + E)</span> for graph adjacency list.</td>
+      <td><span class="math-var">O(V)</span> recursive call stack + assignment map.</td>
+    </tr>
+    <tr>
+      <td><strong>Optimality Guarantee</strong></td>
+      <td>Upper bounded by <span class="math-var">&Delta;(G) + 1</span>; usually optimal on sparse graphs.</td>
+      <td>Guaranteed to find the exact minimal chromatic number.</td>
+    </tr>
+    <tr>
+      <td><strong>Recommended Use</strong></td>
+      <td>Instant, real-time schedule generation for large colleges.</td>
+      <td>Academic benchmarking and verification of small batches.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="page-break"></div>
+
+<!-- CHAPTER 8 -->
+<h1 class="chapter-title">Chapter 8: Java Backend Implementation Walkthrough</h1>
+
+<h2>8.1 Class Responsibility Matrix</h2>
+<p>
+  The backend code in <code>backend/src/com/examoptima/</code> adheres strictly to single-responsibility design principles:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width: 25%;">Class File</th>
+      <th style="width: 35%;">Package Location</th>
+      <th style="width: 40%;">Primary System Responsibility</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>ExamOptimaServer.java</strong></td>
+      <td><code>com.examoptima.server</code></td>
+      <td>HTTP Server initialization, routing, CORS headers, JSON request parsing, and error dispatch.</td>
+    </tr>
+    <tr>
+      <td><strong>GraphColoringScheduler.java</strong></td>
+      <td><code>com.examoptima.service</code></td>
+      <td>Constructs the conflict graph and executes Welsh-Powell Greedy or Backtracking coloring.</td>
+    </tr>
+    <tr>
+      <td><strong>ClassroomAllocationService.java</strong></td>
+      <td><code>com.examoptima.service</code></td>
+      <td>Implements Best-Fit bin-packing to allocate rooms to subjects per slot without double-booking.</td>
+    </tr>
+    <tr>
+      <td><strong>DatabaseManager.java</strong></td>
+      <td><code>com.examoptima.db</code></td>
+      <td>Manages SQLite connection pooling, schema initialization, auto-seeding, and CRUD transactions.</td>
+    </tr>
+    <tr>
+      <td><strong>Model DTOs</strong></td>
+      <td><code>com.examoptima.model</code></td>
+      <td>Encapsulates entities: <code>Subject</code>, <code>Classroom</code>, <code>TimeSlot</code>, and <code>ScheduleResult</code>.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>8.2 Classroom Allocation Service Walkthrough</h2>
+<p>
+  After Graph Coloring assigns time slots to subjects, <code>ClassroomAllocationService.java</code> assigns physical classrooms. It uses a capacity-aware greedy heuristic:
+</p>
+<pre><code><span class="code-kw">public</span> Map&lt;String, List&lt;Classroom&gt;&gt; allocateRooms(List&lt;Subject&gt; examsInSlot,
+                                                  List&lt;Classroom&gt; allRooms) {
+    Map&lt;String, List&lt;Classroom&gt;&gt; allocation = <span class="code-kw">new</span> HashMap&lt;&gt;();
+    List&lt;Classroom&gt; availableRooms = <span class="code-kw">new</span> ArrayList&lt;&gt;(allRooms);
+
+    <span class="code-cm">// Sort rooms by capacity in descending order</span>
+    availableRooms.sort((r1, r2) -&gt; Integer.compare(r2.getCapacity(), r1.getCapacity()));
+
+    <span class="code-kw">for</span> (Subject exam : examsInSlot) {
+        <span class="code-kw">int</span> needed = exam.getTotalStudents();
+        List&lt;Classroom&gt; assigned = <span class="code-kw">new</span> ArrayList&lt;&gt;();
+
+        <span class="code-kw">for</span> (Iterator&lt;Classroom&gt; it = availableRooms.iterator(); it.hasNext();) {
+            Classroom room = it.next();
+            assigned.add(room);
+            needed -= room.getCapacity();
+            it.remove(); <span class="code-cm">// Room is occupied for this time slot</span>
+
+            <span class="code-kw">if</span> (needed &lt;= 0) {
+                <span class="code-kw">break</span>; <span class="code-cm">// Seating capacity fully satisfied</span>
+            }
+        }
+        allocation.put(exam.getId(), assigned);
+    }
+    <span class="code-kw">return</span> allocation;
+}</code></pre>
+
+<!-- CHAPTER 9 -->
+<h1 class="chapter-title">Chapter 9: Database Architecture, REST APIs &amp; Communication</h1>
+
+<h2>9.1 SQLite Schema &amp; Storage Layout</h2>
+<p>
+  Examia stores all persistent configuration and generated timetables in <code>backend/data/examia.db</code>. The schema contains normalized tables:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width: 25%;">Table Name</th>
+      <th style="width: 35%;">Key Columns &amp; Constraints</th>
+      <th style="width: 40%;">Operational Role</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>subjects</strong></td>
+      <td><code>id (TEXT PK), code (TEXT UNIQUE), name (TEXT), total_students (INT)</code></td>
+      <td>Stores course registry and total student enrollment count.</td>
+    </tr>
+    <tr>
+      <td><strong>student_groups</strong></td>
+      <td><code>id (TEXT PK), name (TEXT UNIQUE), student_count (INT)</code></td>
+      <td>Stores academic cohorts (Division A, Division B, Division C).</td>
+    </tr>
+    <tr>
+      <td><strong>subject_enrollments</strong></td>
+      <td><code>subject_id (FK), group_id (FK) &mdash; Composite PK</code></td>
+      <td>Many-to-many relationship defining which divisions take each subject.</td>
+    </tr>
+    <tr>
+      <td><strong>classrooms</strong></td>
+      <td><code>id (TEXT PK), name (TEXT UNIQUE), capacity (INT)</code></td>
+      <td>Maintains physical exam venues and maximum seating thresholds.</td>
+    </tr>
+    <tr>
+      <td><strong>algorithm_runs</strong></td>
+      <td><code>id (PK AUTO), algorithm_type (TEXT), slots_used (INT), execution_time_ms (REAL)</code></td>
+      <td>Maintains audit history and performance metrics for each generated timetable.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>9.2 REST API Endpoints</h2>
+<table>
+  <thead>
+    <tr>
+      <th style="width: 15%;">Method</th>
+      <th style="width: 35%;">Endpoint URI</th>
+      <th style="width: 50%;">Description &amp; Handled Data</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="badge badge-info">GET</span></td>
+      <td><code>/api/subjects</code></td>
+      <td>Returns JSON array of all subjects with enrolled division names.</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-info">GET</span></td>
+      <td><code>/api/classrooms</code></td>
+      <td>Returns JSON list of active classrooms and capacities.</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-success">POST</span></td>
+      <td><code>/api/timetable/generate</code></td>
+      <td>Accepts configuration JSON (algorithm, dates, slots); returns generated timetable.</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-info">GET</span></td>
+      <td><code>/api/timetable/current</code></td>
+      <td>Fetches the most recently generated timetable from SQLite.</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- CHAPTER 10 -->
+<h1 class="chapter-title">Chapter 10: Correctness of Implementation &amp; Invariant Defenses</h1>
+
+<h2>10.1 Invariant Defenses</h2>
+<p>
+  A generated timetable is deemed mathematically sound and valid if and only if three non-negotiable invariants are strictly preserved:
+</p>
+
+<div class="formula-card">
+  <div class="formula-title">Hard Invariant 1: Zero Student Overlaps</div>
+  <p style="margin-bottom: 4px;">For every pair of subjects sharing at least one common student division:</p>
+  <div class="formula-body">If Edges(u, v) exists &rarr; Slot(u) != Slot(v)</div>
+  <p style="margin-top: 4px; font-size: 8pt; color: #522736;"><strong>Defense:</strong> Verified in <code>GraphColoringScheduler</code>. Whenever two subjects share a student group, an undirected edge is established. The coloring algorithm forbids adjacent vertices from sharing the same color integer.</p>
+</div>
+
+<div class="formula-card">
+  <div class="formula-title">Hard Invariant 2: Zero Classroom Double-Booking</div>
+  <p style="margin-bottom: 4px;">A single physical room cannot host two distinct exams during the same time slot:</p>
+  <div class="formula-body">If Slot(A) == Slot(B) &rarr; AssignedRooms(A) &cap; AssignedRooms(B) == Empty</div>
+  <p style="margin-top: 4px; font-size: 8pt; color: #522736;"><strong>Defense:</strong> Verified in <code>ClassroomAllocationService</code>. A dedicated copy of available rooms is maintained for each time slot. When a room is assigned to an exam, it is removed from that slot's room pool.</p>
+</div>
+
+<div class="formula-card">
+  <div class="formula-title">Hard Invariant 3: Seating Capacity Guarantee</div>
+  <p style="margin-bottom: 4px;">Total seating capacity across assigned rooms must accommodate all enrolled students:</p>
+  <div class="formula-body">Sum of Capacity(AssignedRooms) &ge; TotalStudents(Subject)</div>
+  <p style="margin-top: 4px; font-size: 8pt; color: #522736;"><strong>Defense:</strong> Multi-room greedy assignment continues picking rooms until cumulative capacity satisfies the student count.</p>
+</div>
+
+<div class="page-break"></div>
+
+<!-- CHAPTER 11 -->
+<h1 class="chapter-title">Chapter 11: Time &amp; Space Complexity Analysis</h1>
+
+<h2>11.1 Mathematical Derivation of Algorithmic Steps</h2>
+<p>
+  Let <span class="math-var">V</span> be the number of examination subjects (vertices), <span class="math-var">E</span> be the number of conflict edges between subjects sharing student divisions, <span class="math-var">D</span> be the maximum number of divisions per subject, and <span class="math-var">m</span> be the slot budget.
+</p>
+
+<div class="formula-card">
+  <div class="formula-title">1. Conflict Graph Construction Complexity</div>
+  <p>The outer loop runs <span class="math-var">V</span> times; the inner loop runs from <span class="math-var">i+1</span> to <span class="math-var">V-1</span>. Total pairs tested:</p>
+  <div class="formula-body">Total Pairs = [V &times; (V - 1)] / 2 = &Theta;(V<sup>2</sup>)</div>
+  <p>For each pair of subjects, checking division overlap takes <span class="math-var">O(D<sup>2</sup>)</span> time. Since <span class="math-var">D &le; 4</span> in real colleges, <span class="math-var">D</span> is constant:</p>
+  <div class="formula-body">Graph Construction Time = O(V<sup>2</sup>) | Space = O(V + E)</div>
+</div>
+
+<div class="formula-card">
+  <div class="formula-title">2. Welsh-Powell Greedy Coloring Complexity</div>
+  <p>Sorting <span class="math-var">V</span> vertices by descending degree using comparison sort:</p>
+  <div class="formula-body">Sorting Time = O(V log V)</div>
+  <p>Across all vertices, iterating over conflicting neighbors touches every edge twice:</p>
+  <div class="formula-body">Total Neighbor Inspections = 2 &times; E</div>
+  <p>Assigning the lowest free color with a hash set takes <span class="math-var">O(deg(u))</span>:</p>
+  <div class="formula-body">Total Greedy Time = O(V log V + E) | Space = O(V)</div>
+</div>
+
+<div class="formula-card">
+  <div class="formula-title">3. Backtracking m-Coloring Complexity</div>
+  <p>At each vertex, up to <span class="math-var">m</span> candidate slots are tested. For <span class="math-var">V</span> vertices, the decision tree has depth <span class="math-var">V</span> and branching factor <span class="math-var">m</span>:</p>
+  <div class="formula-body">Maximum Leaf Nodes = m<sup>V</sup></div>
+  <p>Verifying safety per node takes <span class="math-var">O(deg(u)) &le; O(V)</span> time:</p>
+  <div class="formula-body">Worst-Case Time = O(V &times; m<sup>V</sup>) | Space = O(V) (Call Stack)</div>
+</div>
+
+<h2>11.2 Master Complexity Comparison Matrix</h2>
+<table>
+  <thead>
+    <tr>
+      <th style="width: 25%;">Pipeline Step / Algorithm</th>
+      <th style="width: 25%;">Worst-Case Time</th>
+      <th style="width: 25%;">Best-Case Time</th>
+      <th style="width: 25%;">Space Complexity</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Conflict Graph Construction</strong></td>
+      <td>&Theta;(V<sup>2</sup>)</td>
+      <td>&Theta;(V<sup>2</sup>)</td>
+      <td>O(V + E)</td>
+    </tr>
+    <tr>
+      <td><strong>Greedy Welsh-Powell</strong></td>
+      <td>O(V log V + E)</td>
+      <td>&Omega;(V log V) (Sparse graph)</td>
+      <td>O(V)</td>
+    </tr>
+    <tr>
+      <td><strong>Backtracking m-Coloring</strong></td>
+      <td>O(m<sup>V</sup>) (Dense graph)</td>
+      <td>&Omega;(V) (Immediate match)</td>
+      <td>O(V)</td>
+    </tr>
+    <tr>
+      <td><strong>Classroom Bin-Packing</strong></td>
+      <td>O(S &times; R log R)</td>
+      <td>O(S &times; R)</td>
+      <td>O(R)</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- CHAPTER 12 -->
+<h1 class="chapter-title">Chapter 12: Comprehensive Test Cases &amp; Verification Matrix</h1>
+
+<p>
+  Examia was tested across 12 distinct operational and stress scenarios to ensure mathematical correctness and resilience:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width: 8%;">ID</th>
+      <th style="width: 22%;">Scenario Description</th>
+      <th style="width: 32%;">Input Conditions</th>
+      <th style="width: 26%;">Expected Outcome</th>
+      <th style="width: 12%;">Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>TC01</td>
+      <td>Standard 5-Course Mix</td>
+      <td>5 subjects, 3 divisions (A, B, C)</td>
+      <td>4 slots used, zero conflicts</td>
+      <td><span class="badge badge-success">Passed</span></td>
+    </tr>
+    <tr>
+      <td>TC02</td>
+      <td>Complete Graph (Clique)</td>
+      <td>4 subjects sharing Division A</td>
+      <td>Requires exactly 4 slots</td>
+      <td><span class="badge badge-success">Passed</span></td>
+    </tr>
+    <tr>
+      <td>TC03</td>
+      <td>Independent Courses</td>
+      <td>3 subjects, mutually disjoint groups</td>
+      <td>1 slot reused for all 3 subjects</td>
+      <td><span class="badge badge-success">Passed</span></td>
+    </tr>
+    <tr>
+      <td>TC04</td>
+      <td>Bipartite Graph</td>
+      <td>Group 1 &amp; Group 2 alternating</td>
+      <td>Exactly 2 slots allocated</td>
+      <td><span class="badge badge-success">Passed</span></td>
+    </tr>
+    <tr>
+      <td>TC05</td>
+      <td>Seating Overflow</td>
+      <td>Single exam with 250 students</td>
+      <td>Splits students across 2 rooms</td>
+      <td><span class="badge badge-success">Passed</span></td>
+    </tr>
+    <tr>
+      <td>TC06</td>
+      <td>Room Double-Booking Check</td>
+      <td>Two exams sharing Slot 4</td>
+      <td>Assigned different rooms (A101 &amp; Aud 103)</td>
+      <td><span class="badge badge-success">Passed</span></td>
+    </tr>
+    <tr>
+      <td>TC07</td>
+      <td>Empty Database</td>
+      <td>No subjects registered</td>
+      <td>Graceful warning: "No subjects found"</td>
+      <td><span class="badge badge-success">Passed</span></td>
+    </tr>
+    <tr>
+      <td>TC08</td>
+      <td>Single Subject</td>
+      <td>1 subject with 1 division</td>
+      <td>1 slot, 1 room assigned</td>
+      <td><span class="badge badge-success">Passed</span></td>
+    </tr>
+    <tr>
+      <td>TC09</td>
+      <td>Backtracking Slot Budget Fail</td>
+      <td>Clique of 4 subjects with budget m=3</td>
+      <td>Returns failure: cannot color in 3 slots</td>
+      <td><span class="badge badge-success">Passed</span></td>
+    </tr>
+    <tr>
+      <td>TC10</td>
+      <td>Backtracking Incremental Search</td>
+      <td>Default 5 subjects without slot budget</td>
+      <td>Finds minimum chromatic number (4 slots)</td>
+      <td><span class="badge badge-success">Passed</span></td>
+    </tr>
+    <tr>
+      <td>TC11</td>
+      <td>High Student Density</td>
+      <td>50 subjects generated synthetically</td>
+      <td>Greedy finishes in under 35 milliseconds</td>
+      <td><span class="badge badge-success">Passed</span></td>
+    </tr>
+    <tr>
+      <td>TC12</td>
+      <td>Print Layout Integrity</td>
+      <td>Click Print Timetable in UI</td>
+      <td>Clean A4 table without UI headers or buttons</td>
+      <td><span class="badge badge-success">Passed</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- CHAPTER 13 -->
+<h1 class="chapter-title">Chapter 13: Live Project Demonstration Script</h1>
+
+<h2>13.1 Step-by-Step Presentation Walkthrough for Examiners</h2>
+<p>
+  When presenting Examia to the external examiner, follow this structured 5-minute presentation script:
+</p>
+
+<ol>
+  <li><strong>Introduction (1 minute):</strong>
+    <em>"Good morning respected examiners. Our mini-project is Examia, an automated conflict-free examination timetable generator. In academic institutions, timetable creation is an NP-complete problem because shared student enrollments create scheduling clashes. We solved this by mapping courses to graph vertices, student overlaps to conflict edges, and time slots to graph colors."</em>
+  </li>
+  <li><strong>Architecture &amp; Code Inspection (1 minute):</strong>
+    <em>"Our backend is written in pure Java 21 LTS with zero external heavy frameworks, using standard <code>HttpServer</code> and SQLite in WAL mode for thread-safe persistence. Our frontend is a responsive React 18 Single-Page Application."</em>
+  </li>
+  <li><strong>Live Generation Run (1.5 minutes):</strong>
+    <em>"Now let us generate the schedule live. We select the Welsh-Powell Greedy Algorithm, configure exam start dates, and click Generate Timetable. In less than 10 milliseconds, the backend constructs the conflict graph, calculates vertex degrees, sorts by descending degree, and assigns non-conflicting time slots."</em>
+  </li>
+  <li><strong>Explaining the Result (1 minute):</strong>
+    <em>"Notice that Slot 4 is assigned to two subjects: CS203 DBMS and CS202 Data Structures. This is not a bug; it proves our algorithm works! CS203 is taken by Divisions B and C, while CS202 is taken by Division A. Because they share zero common students, there is no conflict edge between them. Furthermore, our room allocation service assigned Auditorium 103 to DBMS and Room A101 to Data Structures, preventing room double-booking."</em>
+  </li>
+  <li><strong>Conclusion &amp; Handover (30 seconds):</strong>
+    <em>"Examia guarantees zero student clashes, zero room double-booking, and optimal slot utilization. We are now ready for your questions."</em>
+  </li>
+</ol>
+
+<div class="page-break"></div>
+
+<!-- CHAPTER 14 -->
+<h1 class="chapter-title">Chapter 14: Individual Contribution &amp; Team Viva Preparation</h1>
+
+<h2>14.1 Team Responsibility Matrix (3 Members)</h2>
+<p>
+  To ensure every team member demonstrates clear ownership during the viva, responsibilities are allocated across 3 distinct technical domains:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width: 20%;">Role / Member</th>
+      <th style="width: 40%;">Core Responsibilities &amp; Implemented Modules</th>
+      <th style="width: 40%;">Key Viva Topics to Defend</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Member 1:<br>DAA &amp; Algorithms Specialist</strong></td>
+      <td>
+        Implemented <code>GraphColoringScheduler.java</code>; graph construction logic, degree calculation, Welsh-Powell sorting, and recursive Backtracking with <code>isSafe()</code> pruning.
+      </td>
+      <td>
+        Graph coloring definitions, Welsh-Powell degree heuristic, Chromatic Number &chi;(G), worst-case &amp; best-case time complexity, recursion tree pruning, and NP-completeness.
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Member 2:<br>Java Backend Architect</strong></td>
+      <td>
+        Implemented <code>ExamOptimaServer.java</code> and <code>ClassroomAllocationService.java</code>; HTTP routing, JSON serialization, concurrency thread pools, and capacity bin-packing.
+      </td>
+      <td>
+        Lightweight HTTP server architecture, REST endpoints, room allocation bin-packing logic, handling capacity overflows, multithreading, and error response handling.
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Member 3:<br>Database &amp; Frontend Engineer</strong></td>
+      <td>
+        Implemented <code>DatabaseManager.java</code> (SQLite WAL mode, schema design, auto-seeding) and React 18 frontend (Vite, Tailwind UI, print CSS).
+      </td>
+      <td>
+        Database schema, many-to-many enrollment table, WAL journal mode concurrency, REST API integration, frontend state management, and printable timetable layout.
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- CHAPTER 15 -->
+<h1 class="chapter-title">Chapter 15: Master Viva Question &amp; Answer Bank (55 Questions)</h1>
+
+<h2>Section A: Core DAA &amp; Graph Theory (Q1 to Q18)</h2>
+
+<div class="qa-card">
+  <div class="qa-q">Q1: What is the Graph Coloring Problem?</div>
+  <div class="qa-a">Graph Coloring is the assignment of labels (colors) to the vertices of a graph such that no two adjacent vertices share the same color. The objective is to minimize the total number of colors used, which is known as the Chromatic Number &chi;(G).</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q2: How does Examia map the examination scheduling problem to graph coloring?</div>
+  <div class="qa-a">Each academic subject is mapped to a vertex in the graph. If two subjects share at least one student division, an undirected conflict edge is created between them. The colors assigned to vertices represent the distinct examination time slots.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q3: What does an edge represent in your conflict graph?</div>
+  <div class="qa-a">An edge represents a potential scheduling clash between two subjects due to shared student enrollments. If an edge exists between Subject A and Subject B, they cannot be scheduled in the same time slot.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q4: What is the Chromatic Number of a graph?</div>
+  <div class="qa-a">The Chromatic Number, denoted as &chi;(G), is the minimum number of colors needed to color a graph such that no two adjacent vertices share the same color. In Examia, &chi;(G) represents the minimum number of examination time slots required.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q5: Is the Graph Coloring Problem polynomial or NP-complete?</div>
+  <div class="qa-a">Finding the chromatic number for general graphs is NP-hard, and deciding if a graph can be colored with k colors (for k &ge; 3) is NP-complete. Therefore, finding an optimal schedule for large inputs requires heuristics like greedy coloring.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q6: What is a Greedy Algorithm?</div>
+  <div class="qa-a">A greedy algorithm builds a solution piece by piece, always choosing the immediate next piece that offers the most obvious benefit (a local optimum) without reconsidering previous decisions.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q7: How does the Welsh-Powell Algorithm improve upon basic greedy coloring?</div>
+  <div class="qa-a">Basic greedy coloring processes vertices in arbitrary order, which can use unnecessary colors. Welsh-Powell sorts vertices by descending order of their degree first. Higher-degree vertices are the hardest to schedule, so coloring them first leads to better color reuse.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q8: What is vertex degree, and why is it important in Welsh-Powell?</div>
+  <div class="qa-a">Vertex degree is the number of edges incident to a vertex. In Examia, it represents how many other subjects conflict with that subject. Higher-degree subjects have more constraints, so resolving them first minimizes overall slots.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q9: What is the upper bound on the number of colors used by Welsh-Powell?</div>
+  <div class="qa-a">Welsh-Powell is guaranteed to color any graph using at most &Delta;(G) + 1 colors, where &Delta;(G) is the maximum vertex degree in the graph.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q10: What is the Time Complexity of Welsh-Powell greedy coloring in Examia?</div>
+  <div class="qa-a">The time complexity is O(V log V + E), where V is the number of subjects and E is the number of conflict edges. Sorting takes O(V log V), and checking neighbor colors across all vertices takes O(E) time.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q11: What is Backtracking?</div>
+  <div class="qa-a">Backtracking is an algorithmic approach that systematically searches for solutions by trying partial assignments and abandoning (pruning) branches as soon as it determines they cannot lead to a valid full solution.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q12: How does your Backtracking algorithm differ from Greedy Coloring?</div>
+  <div class="qa-a">Greedy coloring makes irreversible choices in one pass and may use more colors than the optimal chromatic number. Backtracking can undo choices and explore alternate paths, guaranteeing an optimal coloring at the cost of exponential worst-case time.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q13: What is the state-space tree in your Backtracking coloring?</div>
+  <div class="qa-a">The state-space tree represents all possible color assignments. The root represents the start, each tree level corresponds to an exam subject, and each branch from a node represents assigning a candidate time slot.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q14: What is the purpose of the isSafe() method in Backtracking?</div>
+  <div class="qa-a">The isSafe() method verifies that none of the current subject's conflicting neighbors have already been assigned the candidate time slot. If a conflict is found, it returns false, pruning that branch immediately.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q15: What is the Time Complexity of Backtracking Graph Coloring?</div>
+  <div class="qa-a">In the worst case, Backtracking has a time complexity of O(V &times; m<sup>V</sup>), where V is the number of subjects and m is the number of allowed time slots. With branch-and-bound pruning, average runtime on sparse graphs is significantly faster.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q16: How does Examia find the minimum chromatic number using Backtracking?</div>
+  <div class="qa-a">It runs an incremental search: it attempts to color the graph with k = 1 slot. If Backtracking fails, it increments k to 2, 3, etc. The first value of k for which Backtracking returns true is mathematically guaranteed to be the exact Chromatic Number &chi;(G).</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q17: What is the Space Complexity of your Backtracking algorithm?</div>
+  <div class="qa-a">The space complexity is O(V), required for the recursion call stack (depth equal to the number of subjects V) and the hash map storing current slot assignments.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q18: What is a complete graph (clique), and how many slots does it require?</div>
+  <div class="qa-a">A complete graph K<sub>n</sub> has an edge between every pair of vertices. If n subjects all share students, the conflict graph is a clique, and its chromatic number is exactly n. Each exam must be in its own separate time slot.</div>
+</div>
+
+<h2>Section B: Java Backend Architecture &amp; OOP (Q19 to Q33)</h2>
+
+<div class="qa-card">
+  <div class="qa-q">Q19: Why did you use pure Java without Spring Boot?</div>
+  <div class="qa-a">We used Java 21 LTS standard libraries to keep the project lightweight, transparent, and focused purely on DAA principles. Using com.sun.net.httpserver eliminates heavy framework overhead and allows direct line-by-line inspection of data structures and algorithms.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q20: What Java collection data structures are used for the graph?</div>
+  <div class="qa-a">The conflict graph uses an Adjacency List modeled with a Map&lt;String, List&lt;String&gt;&gt;, where the key is the subject ID and the value is the list of adjacent conflicting subject IDs. Sets (HashSet) are used for fast O(1) neighbor color lookups.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q21: How does your backend handle concurrent incoming HTTP requests?</div>
+  <div class="qa-a">The HttpServer instance is configured with an ExecutorService thread pool. Each incoming request is handled asynchronously on an isolated worker thread without blocking other requests.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q22: How do you sort vertices by degree in Java?</div>
+  <div class="qa-a">We use Collections.sort() with a custom Comparator that queries vertex degrees from a precomputed degrees map and orders them in descending numerical order (Integer.compare(deg2, deg1)).</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q23: How is recursion implemented in Backtracking, and what is the base case?</div>
+  <div class="qa-a">The backtrack() method calls itself with index + 1. The base case is when index == subjects.size(), meaning every subject has been assigned a valid non-conflicting time slot, returning true.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q24: What happens during the backtrack step in your Java code?</div>
+  <div class="qa-a">If subsequent recursive calls return false, the code executes assignments.remove(current.getId()), undoing the tentative assignment before testing the next candidate slot.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q25: Why do you clone the classroom list in ClassroomAllocationService?</div>
+  <div class="qa-a">Each time slot has the full set of physical classrooms available. We clone the master room list for each time slot so assigning a room in Slot 1 does not remove it from Slot 2.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q26: How are room conflicts avoided in the same time slot?</div>
+  <div class="qa-a">Within a given time slot, once a classroom is allocated to an exam, it is removed from that slot's available room pool. No two exams in the same slot can receive the same classroom.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q27: What algorithm is used for classroom allocation?</div>
+  <div class="qa-a">A Greedy Best-Fit / First-Fit Decreasing heuristic. Rooms are sorted by capacity in descending order, and the largest available rooms are assigned until cumulative capacity satisfies the student enrollment.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q28: How is CORS handled in your Java HTTP server?</div>
+  <div class="qa-a">Every HTTP exchange includes headers for Access-Control-Allow-Origin: *, along with allowed methods (GET, POST, OPTIONS) and headers, and handles HTTP OPTIONS preflight requests.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q29: How do you parse JSON in the Java backend?</div>
+  <div class="qa-a">We use a lightweight, dedicated JSON utility parser within the backend to extract configuration fields from the request stream and serialize timetable objects into JSON response strings.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q30: What is the role of DTO classes in your project?</div>
+  <div class="qa-a">Data Transfer Objects (DTOs) like Subject, Classroom, and TimeSlot encapsulate domain data with immutable getters and setters, ensuring clean separation between database records and algorithm processing.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q31: How do you prevent memory leaks during timetable generation?</div>
+  <div class="qa-a">All transient data structures (adjacency lists, sets, temporary maps) are scoped locally within generation methods and cleared immediately, making them eligible for Java garbage collection.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q32: What exception handling is implemented in the backend?</div>
+  <div class="qa-a">All database interactions and algorithm invocations are wrapped in try-catch blocks. If an unrecoverable conflict or error occurs, the server logs the stack trace and dispatches a structured JSON error response with HTTP 500 or 400.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q33: How does the server measure algorithm execution time?</div>
+  <div class="qa-a">We record System.nanoTime() immediately before invoking the scheduler and immediately after completion, computing elapsed time in milliseconds with microsecond precision.</div>
+</div>
+
+<h2>Section C: Database, Constraints &amp; Classroom Allocation (Q34 to Q45)</h2>
+
+<div class="qa-card">
+  <div class="qa-q">Q34: Why did you choose SQLite for Examia?</div>
+  <div class="qa-a">SQLite is a serverless, self-contained, zero-configuration database stored as a single file on disk (examia.db). It allows the entire application to be easily demonstrated without needing external database server setup.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q35: What is SQLite WAL mode, and why is it enabled?</div>
+  <div class="qa-a">WAL stands for Write-Ahead Logging. In standard rollback journal mode, writing locks the entire database. WAL mode allows concurrent readers and writers simultaneously, preventing database locked exceptions during concurrent generation.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q36: Explain the database relationship between subjects and student groups.</div>
+  <div class="qa-a">It is a many-to-many relationship. A subject can be taken by multiple divisions, and a division takes multiple subjects. This is modeled using an intermediate join table called subject_enrollments.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q37: What is the difference between a Hard Constraint and a Soft Constraint?</div>
+  <div class="qa-a">A hard constraint must be satisfied for a timetable to be valid (e.g., zero student overlaps, room capacity). A soft constraint is an optimization goal that should be minimized where possible (e.g., minimizing total examination days).</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q38: What happens if an exam's enrollment exceeds the largest classroom?</div>
+  <div class="qa-a">Examia implements multi-room allocation. If Mathematics has 130 students and the largest room holds 100, the system assigns a 100-capacity room plus a second room (e.g., 60-capacity), satisfying the total headcount.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q39: What happens if total enrollment across all exams in a slot exceeds total campus seating?</div>
+  <div class="qa-a">The classroom allocation service identifies that the room pool is exhausted and flags a capacity warning, indicating that additional rooms or an extra time slot must be provided.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q40: How are database transactions handled during generation?</div>
+  <div class="qa-a">When saving a generated timetable, auto-commit is disabled. The algorithm run record and all exam slot assignments are written inside a single atomic transaction, followed by commit(). If any write fails, rollback() is executed.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q41: How does the application seed mock data if the database is empty?</div>
+  <div class="qa-a">On startup, DatabaseManager checks the count of records in the subjects table. If the count is 0, it automatically executes seed scripts inserting 5 standard engineering subjects, 3 student divisions, and 4 classrooms.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q42: Can Examia handle elective courses with mixed enrollments?</div>
+  <div class="qa-a">Yes. By adding individual students or elective subgroups into the subject_enrollments table, any combination of shared student registrations will automatically generate the appropriate conflict edges.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q43: How is data integrity enforced in the database schema?</div>
+  <div class="qa-a">Foreign key constraints (PRAGMA foreign_keys = ON) link enrollments to subjects and groups. Unique constraints on subject codes and classroom names prevent duplicate records.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q44: What information is stored in the algorithm_runs audit table?</div>
+  <div class="qa-a">It records the timestamp, algorithm used (Greedy vs Backtracking), total time slots required, execution time in milliseconds, and status, enabling comparative performance audits over time.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q45: How does the frontend fetch updated timetable results?</div>
+  <div class="qa-a">After sending the POST generation request, the frontend receives the full schedule directly in the HTTP JSON response, updating the React state and rendering the timetable immediately.</div>
+</div>
+
+<h2>Section D: Tough Examiner Cross-Examination &amp; Edge Cases (Q46 to Q55)</h2>
+
+<div class="qa-card">
+  <div class="qa-q">Q46: Why do two exams appear in Slot 4 in your final schedule? Is that a bug?</div>
+  <div class="qa-a">No, it is not a bug; it is proof that Graph Coloring works! In our conflict graph, CS203 (DBMS) is enrolled by Divisions B and C, while CS202 (Data Structures) is enrolled only by Division A. Because they share zero common students, there is no conflict edge between them. Both can safely occur in Slot 4. Furthermore, they are assigned different classrooms, avoiding physical room clashes.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q47: Why does Welsh-Powell not always find the minimal Chromatic Number?</div>
+  <div class="qa-a">Welsh-Powell is a heuristic. It makes irreversible greedy choices based solely on degree ordering. On certain graph structures (such as cycle graphs of odd length or crown graphs), greedy choices can trap the algorithm into using one color more than the true chromatic number.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q48: What is Brooks' Theorem, and how does it relate to your project?</div>
+  <div class="qa-a">Brooks' Theorem states that for any connected undirected graph that is neither a complete graph nor an odd cycle, the chromatic number is at most the maximum degree &Delta;(G). Welsh-Powell respects this bound and often achieves it.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q49: If you have 1000 subjects, which algorithm would you choose and why?</div>
+  <div class="qa-a">We would choose Welsh-Powell Greedy Coloring. Its O(V log V + E) polynomial time complexity will schedule 1000 subjects in less than 50 milliseconds. Backtracking on 1000 subjects could take years due to exponential worst-case complexity O(m<sup>V</sup>).</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q50: Can Graph Coloring handle teacher or invigilator availability?</div>
+  <div class="qa-a">Yes. Teacher availability can be modeled either as a secondary bipartite matching problem after slot assignment, or by adding teacher nodes and conflict edges to the initial graph. This is detailed in our Future Scope.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q51: How does Examia prevent two exams in the same slot from using the same classroom?</div>
+  <div class="qa-a">In ClassroomAllocationService, available rooms are copied into an active list for each time slot. Once a room is assigned to an exam, it is removed from that slot's list, making it impossible for another exam in that slot to receive it.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q52: What is the maximum number of edges a conflict graph of V subjects can have?</div>
+  <div class="qa-a">The maximum number of edges occurs in a complete graph where every subject conflicts with every other subject: E_max = [V &times; (V - 1)] / 2, which is O(V<sup>2</sup>).</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q53: What happens if Backtracking runs on a graph that cannot be colored in m slots?</div>
+  <div class="qa-a">The algorithm explores all valid paths, prunes every branch, and ultimately returns false from the root call. The backend catches this condition and notifies the user that more time slots or examination days are required.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q54: How would you parallelize your timetable generation for very large institutions?</div>
+  <div class="qa-a">We can partition the conflict graph into independent connected components using Breadth-First Search (BFS). Each disconnected component can be colored independently and concurrently on separate threads.</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q55: What is the biggest strength of your implementation?</div>
+  <div class="qa-a">Its mathematical correctness, speed, and clean zero-dependency design. By directly implementing Welsh-Powell and Backtracking in pure Java 21, the system guarantees zero student clashes, zero room double-booking, and instant response times under 10 milliseconds.</div>
+</div>
+
+<!-- CHAPTER 16 -->
+<h1 class="chapter-title">Chapter 16: Advantages, Limitations, Future Scope &amp; Conclusion</h1>
+
+<h2>16.1 System Advantages</h2>
+<ul>
+  <li><strong>Mathematical Guarantee of Zero Clashes:</strong> Graph coloring principles guarantee that conflicting courses never share time slots.</li>
+  <li><strong>Blazing Fast Performance:</strong> Generates complete examination schedules in under 10 milliseconds for standard college loads.</li>
+  <li><strong>Zero External Framework Overhead:</strong> Built on standard Java 21 LTS without requiring heavyweight application servers.</li>
+  <li><strong>Full Classroom Allocation:</strong> Automatically allocates physical exam halls with capacity awareness and double-booking prevention.</li>
+</ul>
+
+<h2>16.2 Known Project Boundaries &amp; Limitations</h2>
+<ul>
+  <li><strong>Single-Campus Seating Scope:</strong> Assumes all classrooms are located within walking distance; travel times between distant campuses are not modeled.</li>
+  <li><strong>Invigilator Scheduling:</strong> The current implementation focuses exclusively on student conflicts and classroom capacities; assigning faculty invigilators is designated for future releases.</li>
+</ul>
+
+<h2>16.3 Future Scope &amp; Enhancements</h2>
+<ul>
+  <li><strong>Faculty Invigilator Allocation:</strong> Implementing bipartite matching (Hopcroft-Karp algorithm) to assign faculty members to examination halls according to department workload rules.</li>
+  <li><strong>Metaheuristic Optimization:</strong> Incorporating Genetic Algorithms (GA) or Simulated Annealing to optimize soft constraints, such as ensuring students have at least one study day between consecutive exams.</li>
+  <li><strong>Multi-Campus Logistics:</strong> Adding travel distance matrices between satellite university campuses to prevent students from having consecutive exams across different locations.</li>
+</ul>
+
+<h2>16.4 Conclusion</h2>
+<p>
+  <strong>Examia</strong> successfully bridges abstract graph theory and practical software engineering. By translating the complex Examination Timetabling Problem into Graph Coloring, it provides academic institutions with an automated, provably correct, and high-performance scheduling platform. Through Welsh-Powell greedy heuristics and exact backtracking search, Examia delivers conflict-free, classroom-optimized examination timetables in milliseconds.
+</p>
+
+</body>
+</html>

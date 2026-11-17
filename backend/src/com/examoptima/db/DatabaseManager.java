@@ -1,7 +1,7 @@
 package com.examoptima.db;
 
 import com.examoptima.model.Subject;
-import com.examoptima.server.JsonHelper;
+import com.examoptima.util.JsonHelper;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;

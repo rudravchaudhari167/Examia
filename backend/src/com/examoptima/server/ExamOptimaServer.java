@@ -10,6 +10,7 @@ import com.examoptima.model.ConflictGraph;
 import com.examoptima.model.Subject;
 import com.examoptima.service.TimetablePlanner;
 import com.examoptima.service.TimetablePlanner.PlanningException;
+import com.examoptima.util.JsonHelper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;

@@ -15,26 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Module I, II & IV: Inheritance, Recursion, and Backtracking DAA Algorithm.
- * 
- * DAA ALGORITHM: BACKTRACKING GRAPH COLORING (m-Coloring Problem)
- * 
- * Algorithm Steps:
- * 1. Order subjects to prune dense vertices early.
- * 2. In recursive method backtrack(vertexIndex, maxSlots):
- *    a. Base Case: If vertexIndex == subjects.size(), all exams placed safely -> RETURN TRUE.
- *    b. For each candidate slot = 0 to maxSlots - 1:
- *       i.   Check if slot is safe (no adjacent neighbor has this slot).
- *       ii.  If safe: Assign slot to vertex.
- *       iii. Recursively call backtrack for (vertexIndex + 1).
- *       iv.  If recursive call succeeds -> RETURN TRUE.
- *       v.   BACKTRACK STEP: If recursive call failed, undo assignment and try next slot.
- *    c. If no slot worked -> RETURN FALSE.
- * 
- * Time Complexity: O(m^V) worst-case exponential
- * Space Complexity: O(V) recursive call stack
- */
 public class BacktrackingColoring extends BaseColoringAlgorithm {
 
     // Simple helper class to track recursion metrics across call stack
@@ -50,9 +30,9 @@ public class BacktrackingColoring extends BaseColoringAlgorithm {
     }
 
     public BacktrackingColoring(int maxSlots) {
-        super(maxSlots > 0 
-            ? "Backtracking Graph Coloring (Limit m = " + maxSlots + ")" 
-            : "Backtracking (Optimal Chromatic Search)");
+        super(maxSlots > 0
+                ? "Backtracking Graph Coloring (Limit m = " + maxSlots + ")"
+                : "Backtracking (Optimal Chromatic Search)");
         this.maxSlots = maxSlots;
     }
 
@@ -63,14 +43,13 @@ public class BacktrackingColoring extends BaseColoringAlgorithm {
             return algorithm.schedule(graph);
         } catch (SchedulingException e) {
             return new ColoringResult(
-                algorithm.getAlgorithmName(),
-                new HashMap<String, Integer>(),
-                0,
-                0,
-                0,
-                false,
-                "Backtracking error: " + e.getMessage()
-            );
+                    algorithm.getAlgorithmName(),
+                    new HashMap<String, Integer>(),
+                    0,
+                    0,
+                    0,
+                    false,
+                    "Backtracking error: " + e.getMessage());
         }
     }
 
@@ -87,17 +66,17 @@ public class BacktrackingColoring extends BaseColoringAlgorithm {
         if (subjects.isEmpty()) {
             long duration = System.nanoTime() - startTime;
             return new ColoringResult(
-                this.algorithmName,
-                new HashMap<String, Integer>(),
-                0,
-                duration,
-                0,
-                true,
-                "Graph has 0 subjects - 0 slots needed."
-            );
+                    this.algorithmName,
+                    new HashMap<String, Integer>(),
+                    0,
+                    duration,
+                    0,
+                    true,
+                    "Graph has 0 subjects - 0 slots needed.");
         }
 
-        // Optimize vertex ordering: sort by descending degree to prune search tree early
+        // Optimize vertex ordering: sort by descending degree to prune search tree
+        // early
         // Uses Anonymous Inner Class (Module I/II - NO lambdas!)
         final Map<String, Integer> degrees = graph.getDegrees();
         Collections.sort(subjects, new Comparator<Subject>() {
@@ -144,21 +123,22 @@ public class BacktrackingColoring extends BaseColoringAlgorithm {
         boolean isValid = found && validateColoring(graph, assignments);
 
         return new ColoringResult(
-            this.algorithmName,
-            found ? assignments : new HashMap<String, Integer>(),
-            finalSlotsUsed,
-            executionTimeNanos,
-            tracker.recursiveCalls,
-            isValid,
-            found 
-                ? "Optimal schedule found with " + finalSlotsUsed + " slots across " + tracker.recursiveCalls + " recursive calls."
-                : "No valid schedule exists with maximum " + this.maxSlots + " slots. Backtracked after " + tracker.recursiveCalls + " calls."
-        );
+                this.algorithmName,
+                found ? assignments : new HashMap<String, Integer>(),
+                finalSlotsUsed,
+                executionTimeNanos,
+                tracker.recursiveCalls,
+                isValid,
+                found
+                        ? "Optimal schedule found with " + finalSlotsUsed + " slots across " + tracker.recursiveCalls
+                                + " recursive calls."
+                        : "No valid schedule exists with maximum " + this.maxSlots + " slots. Backtracked after "
+                                + tracker.recursiveCalls + " calls.");
     }
 
     // Recursive backtracking method exploring the state-space tree
     private boolean backtrack(ConflictGraph graph, List<Subject> subjects, int index,
-                              int slotBudget, Map<String, Integer> assignments, BacktrackTracker tracker) {
+            int slotBudget, Map<String, Integer> assignments, BacktrackTracker tracker) {
         tracker.recursiveCalls++;
 
         // Base Condition: All subjects colored successfully!
@@ -195,7 +175,8 @@ public class BacktrackingColoring extends BaseColoringAlgorithm {
         return false;
     }
 
-    // Helper method: Checks if assigning 'slot' to current vertex creates a clash with neighbors
+    // Helper method: Checks if assigning 'slot' to current vertex creates a clash
+    // with neighbors
     private boolean isSafe(int slot, Set<String> neighbors, Map<String, Integer> assignments) {
         Iterator<String> it = neighbors.iterator();
         while (it.hasNext()) {

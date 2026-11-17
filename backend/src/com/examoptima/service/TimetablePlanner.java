@@ -5,7 +5,7 @@ import com.examoptima.algorithm.GreedyColoring;
 import com.examoptima.model.ColoringResult;
 import com.examoptima.model.ConflictGraph;
 import com.examoptima.model.Subject;
-import com.examoptima.server.JsonHelper;
+import com.examoptima.util.JsonHelper;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
