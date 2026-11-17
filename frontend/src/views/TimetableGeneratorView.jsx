@@ -8,7 +8,6 @@ import {
   ChevronDown,
   ChevronRight,
   Clock,
-  Download,
   FileSpreadsheet,
   FileText,
   Info,
@@ -1215,15 +1214,6 @@ function TimetableGeneratorView({
               >
                 <FileText className="w-4 h-4 text-[#642F43]" aria-hidden="true" />
                 <span>Export Docs</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleExportCsv}
-                className="btn-secondary min-h-[38px] px-3.5 py-2 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
-                title="Download Comma Separated Values (.csv)"
-              >
-                <Download className="w-4 h-4 text-[#642F43]" aria-hidden="true" />
-                <span>Export CSV</span>
               </button>
               <button
                 type="button"
