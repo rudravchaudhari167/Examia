@@ -765,7 +765,7 @@ function TimetableGeneratorView({
         </div>
 
         <form onSubmit={handleSaveConfigClick} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
             <div>
               <label
                 htmlFor="cfg-start-date"
@@ -800,29 +800,6 @@ function TimetableGeneratorView({
                 onChange={(e) => handleDailyStartTimeChange(e.target.value)}
                 className="input-editorial w-full text-sm"
               />
-            </div>
-
-            <div>
-              <label
-                htmlFor="cfg-break-duration"
-                className="block text-xs font-bold text-[#642F43] mb-1.5"
-              >
-                Break Between Exams (hours)
-              </label>
-              <input
-                id="cfg-break-duration"
-                type="number"
-                min="0"
-                max="8"
-                step="0.25"
-                required
-                value={draftConfig.breakDurationHours}
-                onChange={(e) => handleBreakDurationChange(e.target.value)}
-                className="input-editorial w-full text-sm font-mono"
-              />
-              <span className="text-[11px] text-[#7D5563] mt-1 block">
-                {formatDurationBadge(parsedConfigPayload.breakDurationMinutes)}
-              </span>
             </div>
 
             <div>

@@ -39,10 +39,6 @@ public class GreedyColoring extends BaseColoringAlgorithm {
         }
     }
 
-    /**
-     * Module II: Method Overriding
-     * Implements the Greedy Coloring algorithm.
-     */
     @Override
     public ColoringResult schedule(ConflictGraph graph) throws SchedulingException {
         long startTime = System.nanoTime();
