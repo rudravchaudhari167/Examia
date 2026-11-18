@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
@@ -26,8 +26,6 @@ const DEFAULT_CONFIG = {
 export default function App() {
   // Strictly 3 pages: 'dashboard' | 'manage' | 'generator'
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [renderedTab, setRenderedTab] = useState('dashboard');
-  const [, startTabTransition] = useTransition();
   const mainScrollRef = useRef(null);
 
   const handleTabChange = useCallback((nextTab) => {
@@ -36,14 +34,10 @@ export default function App() {
         ? nextTab
         : 'dashboard';
     setActiveTab((prev) => (prev === normalized ? prev : normalized));
-    startTabTransition(() => {
-      setRenderedTab(normalized);
-    });
+    if (mainScrollRef.current) {
+      mainScrollRef.current.scrollTop = 0;
+    }
   }, []);
-
-  useEffect(() => {
-    mainScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });
-  }, [renderedTab]);
 
   // Real SQLite-backed application state
   const [subjects, setSubjects] = useState([]);
@@ -244,7 +238,7 @@ export default function App() {
             ref={mainScrollRef}
             className="examia-main-scroll flex-1 overflow-y-auto overscroll-y-contain px-3.5 sm:px-6 lg:px-10 py-4 sm:py-6 examia-safe-pb"
           >
-            <div key={renderedTab} className="max-w-6xl mx-auto space-y-4 examia-page-fade">
+            <div className="max-w-6xl mx-auto space-y-4">
               {backendError && (
                 <div
                   role="alert"
@@ -268,7 +262,12 @@ export default function App() {
                 </div>
               )}
 
-              {renderedTab === 'dashboard' && (
+              <div
+                role="tabpanel"
+                id="panel-dashboard"
+                aria-hidden={activeTab !== 'dashboard'}
+                className={`examia-tab-panel ${activeTab === 'dashboard' ? 'is-active' : 'is-hidden'}`}
+              >
                 <DashboardView
                   subjects={subjects}
                   studentGroups={studentGroups}
@@ -276,9 +275,14 @@ export default function App() {
                   latestTimetable={latestTimetable}
                   setActiveTab={handleTabChange}
                 />
-              )}
+              </div>
 
-              {renderedTab === 'manage' && (
+              <div
+                role="tabpanel"
+                id="panel-manage"
+                aria-hidden={activeTab !== 'manage'}
+                className={`examia-tab-panel ${activeTab === 'manage' ? 'is-active' : 'is-hidden'}`}
+              >
                 <ManageDataView
                   subjects={subjects}
                   studentGroups={studentGroups}
@@ -295,9 +299,14 @@ export default function App() {
                   onDeleteClassroom={handleDeleteClassroom}
                   onResetSampleData={handleResetSampleData}
                 />
-              )}
+              </div>
 
-              {renderedTab === 'generator' && (
+              <div
+                role="tabpanel"
+                id="panel-generator"
+                aria-hidden={activeTab !== 'generator'}
+                className={`examia-tab-panel ${activeTab === 'generator' ? 'is-active' : 'is-hidden'}`}
+              >
                 <TimetableGeneratorView
                   subjects={subjects}
                   classrooms={classrooms}
@@ -309,7 +318,7 @@ export default function App() {
                   onGenerateTimetable={handleGenerateTimetable}
                   onNavigateToManage={() => handleTabChange('manage')}
                 />
-              )}
+              </div>
             </div>
           </main>
         </div>
